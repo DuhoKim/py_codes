@@ -7,7 +7,7 @@ from astropy import coordinates as coords
 import os
 import astropy.units as u
 from astropy.table import Table, vstack
-import Funcs
+import my_module
 
 data_dir=("/Users/dkim108/Documents/work/sex/")
 plot_dir=("/Users/dkim108/Documents/work/plot/")

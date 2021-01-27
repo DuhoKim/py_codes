@@ -1,214 +1,325 @@
 from astropy.io import ascii
 import numpy as np
-import matplotlib.pyplot as plt
-from astroquery.sdss import SDSS
+import time
 from astropy.coordinates import SkyCoord
-from astropy.coordinates import FK4, Angle, Latitude, Longitude
-from astropy import coordinates as coords
-import os
-from os import listdir
-from os.path import isfile, join
-import astropy.units as u
-from astropy.table import Table, vstack
+import my_module
 import pandas as pd
-from pandas import DataFrame, read_csv
-# import matplotlib
-# matplotlib.rcParams['text.usetex'] = True
+from astropy.io import fits
+from astropy import wcs
+from datetime import datetime
 
-plot_dir=("/Users/dkim108/Documents/work/plot/")
-sex_dir=("/Users/dkim108/Documents/work/sex/gals/")
+work_dir=("/Users/duhokim/work/abell/")
+
+# v1.2
+# class_star_lim = 0.5
+# fwhm_lim = 6.0    # 1.578"
+# flag_lim = 999    # no neighbor no blend no saturate
+
+# v1.3
+# class_star_lim = 0.3
+# fwhm_lim = 5.0    # 1.315"
+# flag_lim = 999    # no neighbor no blend no saturate
+
+# v1.4
+# class_star_lim = 0.5
+# fwhm_lim = 10.0
+# flag_lim = 999    # no neighbor no blend no saturate
+
+# v1.5
+# class_star_lim = 0.5
+# fwhm_lim = 7.0      # 1.841"
+# flag_lim = 999    # no neighbor no blend no saturate
+
+# v1.6
+# ver = 'v1.6'
+# class_star_lim = 0.5
+# fwhm_lim = 5.0
+# flag_lim = 999    # no neighbor no blend no saturate
+
+# ver = 'v1.7'
+# class_star_lim = 0.7
+# fwhm_lim = 3.0      # 1.052"
+# flag_lim = 999    # no neighbor no blend no saturate
+
+# ver = 'v1.8'
+# class_star_lim = 0.9
+# fwhm_lim = 0.0      # 1.052"
+# mag_lim = [21, 22, 22]
+
+# ver = 'v1.0'
+# class_star_lim = 0.9
+# fwhm_lim = 0.0
+# mag_lim = [21, 22, 22]
+
+# ver = 'v1.1'
+# class_star_lim = 0.9
+# fwhm_lim = 0.0
+# mag_lim = [99, 99, 99]
+
+ver = 'deblended'
+class_star_lim = 0.5
+fwhm_lim = 0.0
+mag_lim = [99, 99, 99]
+
+max_sep = 1.0   # matching radius limit among each individual exposures
+mag_sys = 'MAG_ISO'
+magerr_sys = 'MAGERR_ISO'
+mag_sys1 = 'MAG_AUTO'
+magerr_sys1 = 'MAGERR_AUTO'
+ccd_x = 2046
+ccd_y = 4094
 
 clusters = ['A2399', 'A2670', 'A3716']
-for_gal_ext_u = [0.159, 0.188, 0.157] # irsa.ipac.caltech.edu, S and F (2011)
-for_gal_ext_g = [0.124, 0.146, 0.122]
-for_gal_ext_r = [0.086, 0.101, 0.085]
+# single_fn = [['A2399_us_300_0236_20aug.cat', 'A2399_gs_60_0239_19aug.cat', 'A2399_rs_300_0142_19aug.cat'],
+#              ['A2670_us_300_0409_21aug.cat', 'A2670_gs_60_0420_21aug.cat', 'A2670_rs_300_0351_19aug.cat'],
+#              ['A3716_us_300_2357_21aug.cat', 'A3716_gs_300_0030_21aug.cat', 'A3716_rs_300_0418_19aug.cat']]
+single_fn = [['A2399_us_300_0236_deblend.cat', 'A2399_gs_60_0239_deblend.cat', 'A2399_rs_300_0142_deblend.cat'],
+             ['A2670_us_300_0409_deblend.cat', 'A2670_gs_60_0420_deblend.cat', 'A2670_rs_300_0351_deblend.cat'],
+             ['A3716_us_300_2357_deblend.cat', 'A3716_gs_300_0030_deblend.cat', 'A3716_rs_300_0418_deblend.cat']]
 
-class_star_lim = 0.5
-max_sep = 1.0   # matching radius limit among each individual exposures
+single_dqm_fn = [['A2399_ud_300_0236_20aug.fits', 'A2399_gd_60_0239_19aug.fits', 'A2399_rd_300_0142_19aug.fits'],
+             ['A2670_ud_300_0409_21aug.fits', 'A2670_gd_60_0420_21aug.fits', 'A2670_rd_300_0351_19aug.fits'],
+             ['A3716_ud_300_2357_21aug.fits', 'A3716_gd_300_0030_21aug.fits', 'A3716_rd_300_0418_19aug.fits']]
 
-params = ['MAG_ISO', 'MAGERR_ISO', 'FLUX_RADIUS', 'A_WORLD', 'B_WORLD', 'CLASS_STAR', 'TOTAL_EXP_TIME']
-num_of_param = len(params)
+mag_exp_t_corr_300 = 2.5 * np.log10(300)
+mag_exp_t_corr_60 = 2.5 * np.log10(60)
 
-am_cat = pd.read_csv('/Users/dkim108/Documents/work/cat/airmass.csv')
+### Standardization parameters      mag = inst_mag [ZP:25 with flux/s] + a + b * AIRMASS
+# single_a = [[-1.257 + mag_exp_t_corr_300, 0.381 + mag_exp_t_corr_60, 0.567 + mag_exp_t_corr_300],
+#             [-1.796 + mag_exp_t_corr_300, 0.179 + mag_exp_t_corr_60, 0.567 + mag_exp_t_corr_300],
+#             [-1.796 + mag_exp_t_corr_300, 0.179 + mag_exp_t_corr_300, 0.567 + mag_exp_t_corr_300]]
+#
+# single_b = [[-0.592 * 1.26, -0.186 * 1.26, -0.136 * 1.53],
+#             [-0.132 * 1.3, -0.036 * 1.26, -0.136 * 1.41],
+#             [-0.132 * 1.42, -0.036 * 1.31, -0.136 * 1.09]]
+
+single_a = [[-1.9467 + mag_exp_t_corr_300, 0.432 + mag_exp_t_corr_60, 0.521 + mag_exp_t_corr_300],
+            [-1.8171 + mag_exp_t_corr_300, 0.192 + mag_exp_t_corr_60, 0.521 + mag_exp_t_corr_300],
+            [-1.8171 + mag_exp_t_corr_300, 0.192 + mag_exp_t_corr_300, 0.521 + mag_exp_t_corr_300]]
+
+single_b = [[0.04658 * 1.26,    -0.215 * 1.26, -0.097 * 1.53],
+            [-0.0951 * 1.3,     -0.032 * 1.26, -0.097 * 1.41],
+            [-0.0951 * 1.42,    -0.032 * 1.31, -0.097 * 1.09]]
+
+# irsa.ipac.caltech.edu, S and F (2011)
+mw_ext = [[0.159, 0.124, 0.086],
+               [0.188, 0.146, 0.101],
+               [0.157, 0.122, 0.085]]
+
+am_cat = pd.read_csv(work_dir+'sex/cat/airmass.csv')
 
 for k in range(0, len(clusters)):
-    fh = open(sex_dir+'DECam_19_21_aug_2014_single_best_exposure_SEx_cat_'+clusters[k]+'_match_rad_1as_'
-                                    'Gal_ext_corrected.txt', 'w')
+#for k in range(0, 1):
+    start_time = time.time()
+    fn = work_dir+'sex/cat/DECam_19_21_aug_2014_single_best_exposure_SEx_cat_' + clusters[k] + \
+         '_match_rad_1as_Gal_ext_corrected_'+ver
 
-    fh.writelines('#   1 NUMBER                 Running object number \n')
-    fh.writelines('#   2 ALPHA_J2000            Right ascension of barycenter (J2000)                      [deg] \n')
-    fh.writelines('#   3 DELTA_J2000            Declination of barycenter (J2000)                          [deg] \n')
-    fh.writelines('#   4 A_WORLD                Profile RMS along major axis (world units)                 [arcsec] \n')
-    fh.writelines('#   5 B_WORLD                Profile RMS along minor axis (world units)                 [arcsec] \n')
-    fh.writelines('#   6 CLASS_STAR             S/G classifier output \n')
-    fh.writelines('#   7 MAG_ISO_u              Isophotal magnitude in u-band                              [mag] \n')
-    fh.writelines('#   8 MAGERR_ISO_u           Isophotal magnitude error in u-band                        [mag] \n')
-    fh.writelines('#   9 MAG_ISO_g              Isophotal magnitude in g-band (median)                     [mag] \n')
-    fh.writelines('#  10 MAGERR_ISO_g           1-sigma error for isophotal magnitude                      [mag] \n')
-    fh.writelines('#  11 MAG_ISO_r              Isophotal magnitude in r-band (median)                     [mag] \n')
-    fh.writelines('#  12 MAGERR_ISO_r           1-sigma error for isophotal magnitude                      [mag] \n')
+    with open(fn + '.txt', 'w') as fh, open(fn + '.reg', 'w') as regFile:
+        fh.writelines('############################################################################################\n')
+        fh.writelines('#   This is a catalog of photometry of galaxies in Abell cluster '+clusters[k]+' mosaics in          #\n')
+        fh.writelines('# u, g, and r band taken by Dark Energy Camera (DECam) mounted at the prime focus of the B-#\n')
+        fh.writelines('# lanco 4-m telescope at CTIO over 19th - 21st Aug 2014. The single exposures that I used  #\n')
+        fh.writelines('# for photometry are:                                                                      #\n')
+        if k == 0:
+            fh.writelines('#   A2399 u-band : 300s exposure taken at 02:36 in 20-Aug observing date                   #\n')
+            fh.writelines('#   A2399 g-band :  60s exposure taken at 02:39 in 19-Aug observing date                   #\n')
+            fh.writelines('#   A2399 r-band : 300s exposure taken at 01:42 in 19-Aug observing date                   #\n')
+        if k == 1:
+            fh.writelines('#   A2670 u-band : 300s exposure taken at 04:09 in 21-Aug observing date                   #\n')
+            fh.writelines('#   A2670 g-band :  60s exposure taken at 04:20 in 21-Aug observing date                   #\n')
+            fh.writelines('#   A2670 r-band : 300s exposure taken at 03:51 in 19-Aug observing date                   #\n')
+        if k == 2:
+            fh.writelines('#   A3716 u-band : 300s exposure taken at 23:57 in 21-Aug observing date                   #\n')
+            fh.writelines('#   A3716 g-band : 300s exposure taken at 00:30 in 21-Aug observing date                   #\n')
+            fh.writelines('#   A3716 r-band : 300s exposure taken at 04:18 in 19-Aug observing date                   #\n')
+        fh.writelines('# , which was selected based on seeing and airmass.                                        #\n')
+        fh.writelines('#                                                                                          #\n')
+        fh.writelines('#                                  ***  Standardization  ***                               #\n')
+        fh.writelines('#   All 3-bands in 3-days of observing data are standardized using standard star observati-#\n')
+        fh.writelines('# ons taken right before and after the science observations (Please refer to the log file  #\n')
+        fh.writelines('# [noclouds_log.xlsx]). All FITS files are available on NOAO archive. I used Source Extrac-#\n')
+        fh.writelines('# tor to measure magnitudes of standard stars and galaxies. I used MAG_APER at 14.8" diame-#\n')
+        fh.writelines('# ter for standard star photometry and compared with Southern Standard Stars (https://www-s#\n')
+        fh.writelines('# tar.fnal.gov/Southern_ugriz/New/index.html) to convert instrument magnitudes (ZP=25) to -#\n')
+        fh.writelines('# calibrated AB magnitudes correcting for atmospheric extinction by fitting the airmass te-#\n')
+        fh.writelines('# rm.                                                                                      #\n')
+        fh.writelines('#                                    ***  Photometry  ***                                  #\n')
+        fh.writelines('#   The MAG_AUTO and MAG_ISO of galaxies from the Source Extractor are added. I calibrated #\n')
+        fh.writelines('# both magnitudes using the standardization equation that I derived above. The Galactic ex-#\n')
+        fh.writelines('# tinction was corrected adopting the values from irsa.ipac.caltech.edu, S and F (2011).   #\n')
+        fh.writelines('#                                                                                          #\n')
+        fh.writelines('#                                  ***  Sample Selection  ***                              #\n')
+        fh.writelines('#  I added galaxies into this catalog if they have MAG_AUTO < {} in r band, values of the  #\n'
+                      .format(mag_lim[2]))
+        fh.writelines('# Source Extractor parameter \'CLASS_STAR\' < {:4.2f} (close to 0: likely to be galaxies,  #\n'
+                      .format(class_star_lim))
+        fh.writelines('# close to 1: likely to be stars), and central pixel values of \'DQM\' (Data Quality Mask; #\n')
+        fh.writelines('# DECam pipeline product which was useful for getting rid of bright stars) == 0 or 128. The#\n')
+        fh.writelines('# u-band and g-band magnitudes are added if there were matched sources within 1\" radius w-#\n')
+        fh.writelines('# ith their MAG_AUTO < {} and {}, respectively. I put arbitrary numb-er 999.0 if there were#\n'
+                      .format(mag_lim[0], mag_lim[1]))
+        fh.writelines('# no matched source.                                                                                           #\n')
+        fh.writelines('#    If you have any question, please send me an email.                                    #\n')
+        fh.writelines('#    Duho Kim [email:dhkim@kasi.re.kr]                                                     #\n')
+        fh.writelines('#                                                                                          #\n')
+        fh.writelines('#    This Version 1.0 was written on {}                                            #\n'
+                      .format(datetime.today().strftime('%d-%m-%Y')))
+        fh.writelines('#                                                                                          #\n')
+        fh.writelines('############################################################################################\n')
+        fh.writelines('#   1 NUMBER                 Running object number                                         #\n')
+        fh.writelines('#   2 ALPHA_J2000            Right ascension of barycenter (J2000)                [deg]    #\n')
+        fh.writelines('#   3 DELTA_J2000            Declination of barycenter (J2000)                    [deg]    #\n')
+        fh.writelines('#   4 A_WORLD                Profile RMS along major axis (world units)           [arcsec] #\n')
+        fh.writelines('#   5 B_WORLD                Profile RMS along minor axis (world units)           [arcsec] #\n')
+        fh.writelines('#   6 CLASS_STAR             S/G classifier output                                         #\n')
+        fh.writelines('#   7 MAG_AUTO_u             Kron-like elliptical aperture magnitude in u band    [mag]    #\n')
+        fh.writelines('#   8 MAGERR_AUTO_u          RMS error for AUTO magnitude in u band               [mag]    #\n')
+        fh.writelines('#   9 MAG_ISO_u              Isophotal magnitude in u band                        [mag]    #\n')
+        fh.writelines('#  10 MAGERR_ISO_u           RMS error for isophotal magnitude in u band          [mag]    #\n')
+        fh.writelines('#  11 MAG_AUTO_g             Kron-like elliptical aperture magnitude in g band    [mag]    #\n')
+        fh.writelines('#  12 MAGERR_AUTO_g          RMS error for AUTO magnitude in g band               [mag]    #\n')
+        fh.writelines('#  13 MAG_ISO_g              Isophotal magnitude in g band                        [mag]    #\n')
+        fh.writelines('#  14 MAGERR_ISO_g           RMS error for isophotal magnitude in g band          [mag]    #\n')
+        fh.writelines('#  15 MAG_AUTO_r             Kron-like elliptical aperture magnitude in r band    [mag]    #\n')
+        fh.writelines('#  16 MAGERR_AUTO_r          RMS error for AUTO magnitude in r band               [mag]    #\n')
+        fh.writelines('#  17 MAG_ISO_r              Isophotal magnitude in r band                        [mag]    #\n')
+        fh.writelines('#  18 MAGERR_ISO_r           RMS error for isophotal magnitude in r band          [mag]    #\n')
+        fh.writelines('############################################################################################\n')
 
-    stk_all = ascii.read(sex_dir + clusters[k] + '_rsi.cat')
-    # stk_gal = (stk_all['MAG_ISO'] < 90) & (stk_all['CLASS_STAR'] < class_star_lim) & \
-    #             (stk_all['A_WORLD']*3600 > 2) & (stk_all['B_WORLD']*3600 > 2)
-    stk_gal = (stk_all['MAG_ISO'] < 90) & (stk_all['CLASS_STAR'] < class_star_lim)
-    num_of_gal = len(stk_all[stk_gal])
-    stk_coords = SkyCoord(stk_all['ALPHA_J2000'][stk_gal], stk_all['DELTA_J2000'][stk_gal], unit='deg')
+        # read SEx cat
+        sex_cat_u = ascii.read(work_dir + 'sex/cat/best_single/' + single_fn[k][0])
+        sex_cat_g = ascii.read(work_dir + 'sex/cat/best_single/' + single_fn[k][1])
+        sex_cat_r = ascii.read(work_dir + 'sex/cat/best_single/' + single_fn[k][2])
 
-    f = listdir(sex_dir+clusters[k])
+        # standardize magnitudes and Milky Way extinction correction
+        sex_cat_u[mag_sys] = sex_cat_u[mag_sys] + single_a[k][0] + single_b[k][0] - mw_ext[k][0]
+        sex_cat_g[mag_sys] = sex_cat_g[mag_sys] + single_a[k][1] + single_b[k][1] - mw_ext[k][1]
+        sex_cat_r[mag_sys] = sex_cat_r[mag_sys] + single_a[k][2] + single_b[k][2] - mw_ext[k][2]
 
-    u_derived = np.zeros((num_of_gal, num_of_param))
-    g_derived = np.zeros((num_of_gal, num_of_param))
-    r_derived = np.zeros((num_of_gal, num_of_param))
+        sex_cat_u[mag_sys1] = sex_cat_u[mag_sys1] + single_a[k][0] + single_b[k][0] - mw_ext[k][0]
+        sex_cat_g[mag_sys1] = sex_cat_g[mag_sys1] + single_a[k][1] + single_b[k][1] - mw_ext[k][1]
+        sex_cat_r[mag_sys1] = sex_cat_r[mag_sys1] + single_a[k][2] + single_b[k][2] - mw_ext[k][2]
 
-    u_f, g_f, r_f = [s for s in f if '_ui_' in s], [s for s in f if '_gi_' in s], [s for s in f if '_ri_' in s]
+        # for every catalog item
+        for i in range(0, len(sex_cat_u)):
+            # make 'NUMBER' unique
+            sex_cat_u['NUMBER'][i] = i
 
-    u_indi_expos = np.empty((num_of_gal, num_of_param, len(u_f)))
-    g_indi_expos = np.empty((num_of_gal, num_of_param, len(g_f)))
-    r_indi_expos = np.empty((num_of_gal, num_of_param, len(r_f)))
+        for i in range(0, len(sex_cat_g)):
+            # make 'NUMBER' unique
+            sex_cat_g['NUMBER'][i] = i
 
-    u_indi_expos[:] = np.nan
-    g_indi_expos[:] = np.nan
-    r_indi_expos[:] = np.nan
+        for i in range(0, len(sex_cat_r)):
+            # make 'NUMBER' unique
+            sex_cat_r['NUMBER'][i] = i
 
-    for i in range(0, len(u_f)):
-        time = u_f[i].split('_')[3]
-        time_with_colon = time[:2] + ':' + time[2:]
-        if '19aug' in u_f[i]:
-            a, b = 3.349 - 5.0, -0.318
-            am_match = am_cat.loc[(am_cat['date'] == 19) & (am_cat['time'] == time_with_colon)]
-        elif '20aug' in u_f[i]:
-            a, b = 3.127 - 5.0, -0.054
-            am_match = am_cat.loc[(am_cat['date'] == 20) & (am_cat['time'] == time_with_colon)]
-        else:
-            a, b = 3.200 - 5.0, -0.141
-            am_match = am_cat.loc[(am_cat['date'] == 21) & (am_cat['time'] == time_with_colon)]
-        X = am_match.iloc[0, 4]
-        t = am_match.iloc[0, 3]
+        criteria_r = (sex_cat_r[mag_sys1] < mag_lim[2]) & (sex_cat_r['CLASS_STAR'] < class_star_lim)  & \
+                    (sex_cat_r['FWHM_IMAGE'] > fwhm_lim)
 
-        sex_indi = ascii.read(sex_dir+clusters[k]+'/'+u_f[i])
-        indi_coords = SkyCoord(sex_indi['ALPHA_J2000'], sex_indi['DELTA_J2000'], unit='deg')
+        crit_r = sex_cat_r[criteria_r]
 
-        idx, d2d, d3d = indi_coords.match_to_catalog_sky(stk_coords)
-        sep_constraint = (d2d.arcsec < max_sep)
-        indi_matches = sex_indi[sep_constraint]
-        stk_matches = stk_all[stk_gal][idx[sep_constraint]]
+        # read Data Quality Mask (DQM) fits file to check saturation
+        hdu_r = fits.open(work_dir + 'fits/best_single/' + single_dqm_fn[k][2])
 
-        for j in range(0, num_of_param):
-            if j == 0:
-                u_indi_expos[idx[sep_constraint], j, i] = indi_matches[params[j]] + 2.5 * np.log10(t) + a + b * X
-            elif j == 6:
-                u_indi_expos[idx[sep_constraint], j, i] = t
+        # make a boolean array to set FLAGS to SATURATED = 4 (could not directly)
+        is_dqm_r_zero = np.ones(len(crit_r), dtype=bool)
+
+        crit_r.sort(mag_sys1)
+
+        for i in range(0, len(crit_r)):
+            # read the celestial coordinate
+            cel_coord = [[crit_r['ALPHA_J2000'][i], crit_r['DELTA_J2000'][i]], [0, 0]]
+            sky_coord = SkyCoord(crit_r['ALPHA_J2000'][i], crit_r['DELTA_J2000'][i], unit='deg')
+            # for every CCD
+            for j in range(1, 61):
+                # read WCS
+                w = wcs.WCS(hdu_r[j].header)
+                pixcrd = w.wcs_world2pix(cel_coord, 1)
+                # if w.footprint_contains(sky_coord):
+                if (pixcrd[0][0] > 0) & (pixcrd[0][0] < ccd_x) & (pixcrd[0][1] > 0) & (pixcrd[0][1] < ccd_y):
+                    dqm_fits = hdu_r[j].data
+                    # check the value of DQM
+                    if dqm_fits[int(pixcrd[0][1])][int(pixcrd[0][0])] % 128:
+                        # toggle on saturated bool array
+                        is_dqm_r_zero[i] = False
+            if i % 1000 == 0:
+                print("--- %s minutes ---" % (((time.time() - start_time)) / 60.0))
+                print("--- %d / %d ---" % (i, len(crit_r)))
+                my_module.print_time()
+
+        # r-band is the reference
+        num_of_gal = len(crit_r[is_dqm_r_zero])
+
+        coords_r = SkyCoord(crit_r['ALPHA_J2000'][is_dqm_r_zero], crit_r['DELTA_J2000'][is_dqm_r_zero], unit='deg')
+        coords_u = SkyCoord(sex_cat_u['ALPHA_J2000'], sex_cat_u['DELTA_J2000'], unit='deg')
+
+        idx_u, d2d, d3d = coords_u.match_to_catalog_sky(coords_r)
+        sep_constraint_u = (d2d.arcsec < max_sep) & (sex_cat_u[mag_sys1] < mag_lim[0])
+        u_match_to_ref = sex_cat_u[sep_constraint_u]
+        r_match_to_u = crit_r[is_dqm_r_zero][idx_u[sep_constraint_u]]
+
+        coords_g = SkyCoord(sex_cat_g['ALPHA_J2000'], sex_cat_g['DELTA_J2000'], unit='deg')
+
+        idx_g, d2d, d3d = coords_g.match_to_catalog_sky(coords_r)
+        sep_constraint_g = (d2d.arcsec < max_sep) & (sex_cat_g[mag_sys1] < mag_lim[1])
+        g_match_to_ref = sex_cat_g[sep_constraint_g]
+        r_match_to_g = crit_r[is_dqm_r_zero][idx_g[sep_constraint_g]]
+
+        for i in range(0, num_of_gal):
+            if i in idx_u[sep_constraint_u]:
+                idx_match_u = np.where(r_match_to_u['NUMBER'] == crit_r['NUMBER'][is_dqm_r_zero][i])
+                u_iso = u_match_to_ref[mag_sys][idx_match_u][0]
+                uerr_iso = u_match_to_ref[magerr_sys][idx_match_u][0]
+                u_auto = u_match_to_ref[mag_sys1][idx_match_u][0]
+                uerr_auto = u_match_to_ref[magerr_sys1][idx_match_u][0]
             else:
-                u_indi_expos[idx[sep_constraint], j, i] = indi_matches[params[j]]
-
-    for i in range(0, len(g_f)):
-        time = g_f[i].split('_')[3]
-        time_with_colon = time[:2] + ':' + time[2:]
-        if '19aug' in g_f[i]:
-            a, b = 2.857 - 2.5, -0.183
-            am_match = am_cat.loc[(am_cat['date'] == 19) & (am_cat['time'] == time_with_colon)]
-        elif '20aug' in g_f[i]:
-            a, b = 2.835 - 2.5, -0.148
-            am_match = am_cat.loc[(am_cat['date'] == 20) & (am_cat['time'] == time_with_colon)]
-        else:
-            a, b = 2.756 - 2.5, -0.095
-            am_match = am_cat.loc[(am_cat['date'] == 21) & (am_cat['time'] == time_with_colon)]
-        X = am_match.iloc[0, 4]
-        t = am_match.iloc[0, 3]
-
-        sex_indi = ascii.read(sex_dir+clusters[k]+'/'+g_f[i])
-        indi_coords = SkyCoord(sex_indi['ALPHA_J2000'], sex_indi['DELTA_J2000'], unit='deg')
-
-        idx, d2d, d3d = indi_coords.match_to_catalog_sky(stk_coords)
-        sep_constraint = (d2d.arcsec < max_sep)
-        indi_matches = sex_indi[sep_constraint]
-        stk_matches = stk_all[stk_gal][idx[sep_constraint]]
-
-        for j in range(0, num_of_param):
-            if j == 0:
-                g_indi_expos[idx[sep_constraint], j, i] = indi_matches[params[j]] + 2.5 * np.log10(t) + a + b * X
-            elif j == 6:
-                g_indi_expos[idx[sep_constraint], j, i] = t
+                u_iso = 999.0
+                uerr_iso = 999.0
+                u_auto = 999.0
+                uerr_auto = 999.0
+            if i in idx_g[sep_constraint_g]:
+                idx_match_g = np.where(r_match_to_g['NUMBER'] == crit_r['NUMBER'][is_dqm_r_zero][i])
+                g_iso = g_match_to_ref[mag_sys][idx_match_g][0]
+                gerr_iso = g_match_to_ref[magerr_sys][idx_match_g][0]
+                g_auto = g_match_to_ref[mag_sys1][idx_match_g][0]
+                gerr_auto = g_match_to_ref[magerr_sys1][idx_match_g][0]
             else:
-                g_indi_expos[idx[sep_constraint], j, i] = indi_matches[params[j]]
-
-    for i in range(0, len(r_f)):
-        time = r_f[i].split('_')[3]
-        time_with_colon = time[:2] + ':' + time[2:]
-        if '19aug' in r_f[i]:
-            a, b = 3.024 - 2.5, -0.117
-            am_match = am_cat.loc[(am_cat['date'] == 19) & (am_cat['time'] == time_with_colon)]
-        elif '20aug' in r_f[i]:
-            a, b = 2.949 - 2.5, -0.065
-            am_match = am_cat.loc[(am_cat['date'] == 20) & (am_cat['time'] == time_with_colon)]
-        else:
-            a, b = 3.006 - 2.5, -0.095
-            am_match = am_cat.loc[(am_cat['date'] == 21) & (am_cat['time'] == time_with_colon)]
-        X = am_match.iloc[0, 4]
-        t = am_match.iloc[0, 3]
-
-        sex_indi = ascii.read(sex_dir+clusters[k]+'/'+r_f[i])
-        indi_coords = SkyCoord(sex_indi['ALPHA_J2000'], sex_indi['DELTA_J2000'], unit='deg')
-
-        idx, d2d, d3d = indi_coords.match_to_catalog_sky(stk_coords)
-        sep_constraint = (d2d.arcsec < max_sep)
-        indi_matches = sex_indi[sep_constraint]
-        stk_matches = stk_all[stk_gal][idx[sep_constraint]]
-
-        for j in range(0, num_of_param):
-            if j == 0:
-                r_indi_expos[idx[sep_constraint], j, i] = indi_matches[params[j]] + 2.5 * np.log10(t) + a + b * X
-            elif j == 6:
-                r_indi_expos[idx[sep_constraint], j, i] = t
+                g_iso = 999.0
+                gerr_iso = 999.0
+                g_auto = 999.0
+                gerr_auto = 999.0
+            fh.writelines("{:4}".format(i+1) + ' ' +                                    # NUMBER
+                "{:12.7f}".format(coords_r[i].ra.value)+' '+                            # RA
+                "{:12.7f}".format(coords_r[i].dec.value) + ' ' +                        # DEC
+                "{:7.3f}".format(crit_r['A_WORLD'][is_dqm_r_zero][i]*3600) + ' ' +      # A_WORLD
+                "{:7.3f}".format(crit_r['B_WORLD'][is_dqm_r_zero][i]*3600) + ' ' +      # B_WORLD
+                "{:4.2f}".format(crit_r['CLASS_STAR'][is_dqm_r_zero][i]) + ' ' +        # CLASS_STAR
+                "{:7.3f}".format(u_auto) + ' ' +                                        # u-band 'MAG_AUTO'
+                "{:7.3f}".format(uerr_auto) + ' ' +                                     # u-band 'MAGERR_AUTO'
+                "{:7.3f}".format(u_iso) + ' ' +                                         # u-band 'MAG_ISO'
+                "{:7.3f}".format(uerr_iso) + ' ' +                                      # u-band 'MAGERR_ISO'
+                "{:7.3f}".format(g_auto) + ' ' +                                        # g-band 'MAG_AUTO'
+                "{:7.3f}".format(gerr_auto) + ' ' +                                     # g-band 'MAGERR_AUTO'
+                "{:7.3f}".format(g_iso) + ' ' +                                         # g-band 'MAG_ISO'
+                "{:7.3f}".format(gerr_iso) + ' ' +                                      # g-band 'MAGERR_ISO'
+                "{:7.3f}".format(crit_r[mag_sys1][is_dqm_r_zero][i]) + ' ' +            # r-band 'MAG_AUTO'
+                "{:7.3f}".format(crit_r[magerr_sys1][is_dqm_r_zero][i]) + ' ' +         # r-band 'MAGERR_AUTO'
+                "{:7.3f}".format(crit_r[mag_sys][is_dqm_r_zero][i]) + ' ' +             # r-band 'MAG_ISO'
+                "{:7.3f}".format(crit_r[magerr_sys][is_dqm_r_zero][i]) + '\n')         # r-band 'MAGERR_ISO'
+            if crit_r['FLAGS'][is_dqm_r_zero][i] > 0:
+                color = 'red'
             else:
-                r_indi_expos[idx[sep_constraint], j, i] = indi_matches[params[j]]
+                color = 'green'
+            regFile.writelines("j2000; ellipse({:12.7f}, {:12.7f}, {:7.3f}\", {:7.3f}\", {:7.3f}) # text=\'{}\', "
+                               "color={}, dash=1 \n".format(
+                coords_r[i].ra.value,
+                coords_r[i].dec.value,
+                crit_r['A_WORLD'][is_dqm_r_zero][i]*3600,
+                crit_r['B_WORLD'][is_dqm_r_zero][i]*3600,
+                180-crit_r['THETA_WORLD'][is_dqm_r_zero][i],
+                i+1,
+                color))
 
-    for j in range(0, num_of_param):
-        if j == 0:    # 'MAG_ISO' Galactic extinction correction
-            u_derived[:, j] = np.nanmin(u_indi_expos[:, j, :], axis=1) - for_gal_ext_u[k]
-            g_derived[:, j] = np.nanmin(g_indi_expos[:, j, :], axis=1) - for_gal_ext_g[k]
-            r_derived[:, j] = np.nanmin(r_indi_expos[:, j, :], axis=1) - for_gal_ext_r[k]
-        if j == 1:    # 'MAGERR_ISO'
-            u_derived[:, j] = np.nanstd(u_indi_expos[:, j - 1, :], axis=1)
-            g_derived[:, j] = np.nanstd(g_indi_expos[:, j - 1, :], axis=1)
-            r_derived[:, j] = np.nanstd(r_indi_expos[:, j - 1, :], axis=1)
-        if j == 6:      # 'TOTAL_EXP_TIME'
-            u_derived[:, j] = np.nansum(u_indi_expos[:, j, :], axis=1)
-            g_derived[:, j] = np.nansum(g_indi_expos[:, j, :], axis=1)
-            r_derived[:, j] = np.nansum(r_indi_expos[:, j, :], axis=1)
+    print("--- %s minutes ---" % (((time.time() - start_time))/60.0))
 
-    for i in range(0, num_of_gal):
-        if np.sum(~np.isnan(u_indi_expos[i, 0, :])) == 1:
-            u_derived[i, 1] = u_derived[i, 3] = 0.5
-        if np.sum(~np.isnan(g_indi_expos[i, 0, :])) == 1:
-            g_derived[i, 1] = g_derived[i, 3] = 0.5
-        if np.sum(~np.isnan(r_indi_expos[i, 0, :])) == 1:
-            r_derived[i, 1] = r_derived[i, 3] = 0.5
-        fh.writelines("{:4}".format(i+1) + ' ' +                                         # NUMBER   \
-            "{:12.7f}".format(stk_coords[i].ra.value)+' '+                          # RA       \
-            "{:12.7f}".format(stk_coords[i].dec.value) + ' ' +                      # DEC      \
-            "{:7.3f}".format(stk_all['A_WORLD'][stk_gal][i]*3600) + ' ' +              # A_WORLD       \
-            "{:7.3f}".format(stk_all['B_WORLD'][stk_gal][i]*3600) + ' ' +              # B_WORLD       \
-            "{:4.2f}".format(stk_all['CLASS_STAR'][stk_gal][i]) + ' ' +                # CLASS_STAR    \
-            "{:7.3f}".format(u_derived[i, 0]) + ' ' +      # u-band 'MAG_ISO'              \
-            "{:7.3f}".format(u_derived[i, 1]) + ' ' +      # u-band 'MAGERR_ISO'           \
-            # "{:7.3f}".format(u_derived[i, 2]) + ' ' +      # u-band 'MAG_APER'             \
-            # "{:7.3f}".format(u_derived[i, 3]) + ' ' +      # u-band 'MAGERR_APER'          \
-            "{:3}".format(np.sum(~np.isnan(u_indi_expos[i, 0, :]))) + ' ' +                  # number of u-band exposure     \
-            "{:5}".format(u_derived[i, 6]) + ' ' +          # u-band 'TOTAL_EXP_TIME'           \
-            "{:7.3f}".format(g_derived[i, 0]) + ' ' +      # g-band 'MAG_ISO'              \
-            "{:7.3f}".format(g_derived[i, 1]) + ' ' +      # g-band 'MAGERR_ISO'           \
-            # "{:7.3f}".format(g_derived[i, 2]) + ' ' +      # g-band 'MAG_APER'             \
-            # "{:7.3f}".format(g_derived[i, 3]) + ' ' +      # g-band 'MAGERR_APER'          \
-            "{}".format(np.sum(~np.isnan(g_indi_expos[i, 0, :]))) + ' ' +                  # number of g-band exposure     \
-            "{:5}".format(g_derived[i, 6]) + ' ' +          # g-band 'TOTAL_EXP_TIME'           \
-            "{:7.3f}".format(r_derived[i, 0]) + ' ' +      # r-band 'MAG_ISO'              \
-            "{:7.3f}".format(r_derived[i, 1]) + ' ' +      # r-band 'MAGERR_ISO'           \
-            # "{:7.3f}".format(r_derived[i, 2]) + ' ' +      # r-band 'MAG_APER'             \
-            # "{:7.3f}".format(r_derived[i, 3]) + ' ' +      # r-band 'MAGERR_APER'          \
-            "{:4}".format(np.sum(~np.isnan(r_indi_expos[i, 0, :]))) + ' ' +                    # number of r-band exposure)    \
-            "{:5}".format(r_derived[i, 6]) + ' \n'             # r-band 'TOTAL_EXP_TIME'           \
-            )
-
-    fh.close()
+    my_module.print_time()

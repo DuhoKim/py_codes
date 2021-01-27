@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from astropy.coordinates import SkyCoord
 import astropy.units as u
-import Funcs
+import my_module
 
 plot_dir=("/Users/dkim108/Documents/work/plot/")
 cat_dir=("/Users/dkim108/Documents/work/cat/SouthernStandardStars/")

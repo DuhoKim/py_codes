@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from astropy.coordinates import SkyCoord
 import astropy.units as u
-import Funcs
+import my_module
 
 
 
@@ -112,11 +112,11 @@ for i in range(0, len(ss_name)):
         else:
             axarr[l/nrow, l%nrow].plot(rad_in_arcsec, mags, alpha=0.5, color=ss_col[i], linewidth = 1)
 
-        rad_iso = Funcs.find_x0(rad_in_arcsec, mags, mag_iso)
+        rad_iso = my_module.find_x0(rad_in_arcsec, mags, mag_iso)
         axarr[l/nrow, l%nrow].plot(rad_iso, mag_iso, marker='*', alpha=0.5)
         axarr[l/nrow, l%nrow].errorbar(rad_iso, mag_iso, yerr=sex_matches['MAGERR_ISO'][l])
 
-        rad_ss = Funcs.find_x0(rad_in_arcsec, mags, cat_matches[mag_col][l])
+        rad_ss = my_module.find_x0(rad_in_arcsec, mags, cat_matches[mag_col][l])
         axarr[l/nrow, l%nrow].plot(rad_ss, cat_matches[mag_col][l], marker='D', alpha=0.5)
         axarr[l/nrow, l%nrow].errorbar(rad_ss, cat_matches[mag_col][l], yerr=cat_matches[err_col][l])
 

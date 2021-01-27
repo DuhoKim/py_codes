@@ -15,7 +15,7 @@ from pandas import DataFrame, read_csv
 # matplotlib.rcParams['text.usetex'] = True
 from matplotlib.patches import Circle
 import time
-import Funcs
+import my_module
 
 plot_dir=("/Users/dkim108/Documents/work/plot/")
 sex_dir=("/Users/dkim108/Documents/work/sex/gals/")
@@ -300,4 +300,4 @@ for k in range(0, len(clusters)):
 
     print("--- %s minutes ---" % ((time.time() - start_time)/60.0))
 
-    Funcs.print_time()
+    my_module.print_time()
