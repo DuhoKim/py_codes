@@ -113,7 +113,7 @@ for k in range(0, len(ab.clusters)):
         fh.writelines('############################################################################################\n')
         fh.writelines('#   This is a catalog of photometry of galaxies detected in either single-exposure or stac-#\n')
         fh.writelines(
-            '# ked exposure of Abell cluster ' + ab.clusters[k] + ' mosaics in u, g, and r band taken by Dark Energy     #\n')
+            '# ked exposure of Abell cluster ' + ab.clusters[k] + ' mosaics in u, g, and r band taken by Dark Energy      #\n')
         fh.writelines('# Camera (DECam) mounted at the prime focus of the Blanco 4-m telescope at CTIO over       #\n')
         fh.writelines('# 19th - 21st Aug 2014. The single exposures that I used for photometry are:               #\n')
         if k == 0:
@@ -430,7 +430,7 @@ for k in range(0, len(ab.clusters)):
                 ref_r['A_WORLD'][i] * 3600 * ref_r['KRON_RADIUS'][i],
                 ref_r['B_WORLD'][i] * 3600 * ref_r['KRON_RADIUS'][i],
                 180 - ref_r['THETA_WORLD'][i],
-                i,
+                i+1,
                 color))
 
             if i % 10000 == 0:

@@ -1,22 +1,26 @@
-import in_place
+import abell_cluster_module as ab
+from astropy.io import ascii
 
-work_dir=("/Users/duhokim/work/abell/")
+# for cluster in ab.clusters:
+#     fn = ab.sex_dir+f'DECam_merged_SEx_cat_{cluster}_Gal_ext_corrected_{ab.ver}_kron'
+#     with open(fn+'.reg') as reg, open(fn+'_notext.reg', 'w') as new_rg:
+#         lines = reg.readlines()
+#         for line in lines:
+#             if 'text' in line:
+#                 split = line.split("\'")
+#                 new_line = (split[0]+split[2]).replace('text=', '')
+#                 new_rg.writelines(new_line)
+#             else:
+#                 new_rg.writelines(line)
 
-# fn = work_dir + 'sex/cat/DECam_19_21_aug_2014_single_best_exposure_SEx_cat_A2670_match_rad_1as_Gal_ext_corrected_v1.2_no_text.reg'
-fn = work_dir + 'sex/cat/stack/A2670_usi_no_text.reg'
-#fn = work_dir + 'sex/cat/stack/A2399_gsi_no_text.reg'
 
-with in_place.InPlace(fn) as f:
-    for line in f:
-        if line == 'fk5\n':
-            f.write(line)
-            continue
-        a = line.split('{')
-        b = a[1].split('}')
-        new_line = a[0]+'\'\''+b[1]
-        f.write(new_line)
-
-        # a = line.split('{')
-        # b = a[1].split('}')
-        # new_line = a[0]+'\'\''+b[1]
-        # f.write(new_line)
+# sift through bright sources to exclude garbage SEx detections
+for cluster in ab.clusters:
+    fn = ab.sex_dir+f'DECam_merged_SEx_cat_{cluster}_Gal_ext_corrected_{ab.ver}'
+    with open(fn+'_kron.reg') as reg, open(fn+'_20rmag.reg', 'w') as new_rg:
+        lines = reg.readlines()
+        cat = ascii.read(fn+'.txt')
+        for i in range(0, len(cat)):
+            if cat['MAG_AUTO_r'][i] < 20:
+                line = lines[i]
+                new_rg.writelines(line)

@@ -7,6 +7,8 @@ from astropy import coordinates as coords
 import astropy.units as u
 import numpy as np
 from datetime import datetime
+from astropy.cosmology import Planck18
+from astropy.coordinates import Distance, SkyCoord
 
 def closest(cat1, pos1):
     best_dist = 360.0 * 60.0 * u.arcminute
@@ -64,3 +66,12 @@ def print_time():
 def jarrett(pix_values, sigma, n):
     return np.sqrt(np.log10(1+pix_values/(n*sigma)))
 ############################################################################################
+
+def clcendist(z1, z2, coord1, coord2):
+    dz1 = Distance(z=z1, cosmology=Planck18)
+    dz2 = Distance(z=z2, cosmology=Planck18)
+    c1 = SkyCoord(coord1, distance=dz1)
+    c2 = SkyCoord(coord2, distance=dz2)
+    sep = c1.separation_3d(c2)
+    return sep.Mpc
+

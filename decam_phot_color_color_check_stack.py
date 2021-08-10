@@ -3,6 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import abell_cluster_module as ab
+import importlib
+importlib.reload(ab)
 
 size = 1
 alpha = 0.05
@@ -19,7 +21,7 @@ fig, axs = plt.subplots(2, len(ab.clusters), tight_layout=True, figsize=(20, 6))
 
 for k in range(0, len(ab.clusters)):
     sex_cat = ascii.read(ab.sex_dir+'DECam_merged_SEx_cat_'+ab.clusters[k]+'_'+
-                                    'Gal_ext_corrected_'+ab.ver+'_central_deblended_'+tag+'_stack.txt')
+                                    'Gal_ext_corrected_'+ab.ver+'.txt')
 
     good_g = (sex_cat['col6'] < 30)
     good_u = (sex_cat['col4'] < 30)
@@ -45,5 +47,5 @@ for k in range(0, len(ab.clusters)):
     axs[0, k].set_ylim([-1, 3])
     axs[1, k].set_ylim([0, 6])
 
-fig.savefig(ab.plot_dir + 'CMD_stacked_'+ab.ver+'_'+tag+'.png')
+fig.savefig(ab.plot_dir + 'CMD_02_class_star_'+ab.ver+'_'+tag+'.png')
 

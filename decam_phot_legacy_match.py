@@ -16,6 +16,9 @@ from pandas import DataFrame, read_csv
 from matplotlib.patches import Circle
 import time
 import my_module
+import abell_cluster_module as ab
+import importlib
+importlib.reload(ab)
 
 plot_dir=("/Users/duhokim/work/abell/plot/")
 sex_dir=("/Users/duhokim/work/abell/sex/cat/")
@@ -51,11 +54,12 @@ num_of_param = len(params)
 
 am_cat = pd.read_csv('/Users/duhokim/work/abell/sex/cat/airmass.csv')
 
-fig, axs = plt.subplots(2, 2, tight_layout=True, figsize=(8, 8))
+fig = plt.figure(figsize=(8, 10))
+
+gs = fig.add_gridspec(3, 2, width_ratios = (5, 5), height_ratios=(4, 2 ,4))
 
 for k in range(0, len(clusters)):
-    sex_cat = ascii.read(sex_dir+'DECam_19_21_aug_2014_single_best_exposure_SEx_cat_'+clusters[k]+'_match_rad_1as_'
-                                    'Gal_ext_corrected_'+ver+'.txt')
+    sex_cat = ascii.read(ab.sex_dir+f'DECam_merged_SEx_cat_{clusters[k]}_Gal_ext_corrected_{ab.ver}.txt')
     sex_coords = SkyCoord(sex_cat['ALPHA_J2000'], sex_cat['DELTA_J2000'], unit='deg')
 
     is_first = True
@@ -82,52 +86,77 @@ for k in range(0, len(clusters)):
                 leg_total = vstack([leg_total, leg_matches])
 
     is_good = (sex_total[mag_sex+'_g'] < 900) & (leg_total['flux_g'] > 0)
-    axs[0, 0].scatter(sex_total[mag_sex+'_g'][is_good],
+    ax00 = fig.add_subplot(gs[0, 0])
+    ax00.scatter(sex_total[mag_sex+'_g'][is_good],
                    22.5 - 2.5 * np.log10(leg_total['flux_g'][is_good]),
                    alpha = 0.01,
                    s = 1)
-    axs[1, 0].hist(sex_total[mag_sex+'_g'][is_good],
+    ax10 = fig.add_subplot(gs[1, 0], sharex=ax00)
+    ax10.scatter(sex_total[mag_sex+'_g'][is_good],
+                      sex_total[mag_sex + '_g'][is_good] - (22.5 - 2.5 * np.log10(leg_total['flux_g'][is_good])),
+                      alpha=0.01,
+                      s=1)
+    ax20 = fig.add_subplot(gs[2, 0])
+    ax20.hist(sex_total[mag_sex+'_g'][is_good],
                    bins=np.arange(15, 26, 0.5),
-                   label='Our 60s single exposure (SEx)',
+                   label='Our catalog',
                    histtype='step')
-    axs[1, 0].hist(22.5 - 2.5 * np.log10(leg_total['flux_g'][is_good]),
+    ax20.hist(22.5 - 2.5 * np.log10(leg_total['flux_g'][is_good]),
                    bins=np.arange(15.2, 26, 0.5),
-                   label='DECaLS ~140s exposure(s) (Tractor)',
+                   label='DECaLS ~140s \n exposure(s) (Tractor)',
                    histtype='step')
 
     is_good = (sex_total[mag_sex+'_r'] < 900) & (leg_total['flux_r'] > 0)
-    axs[0, 1].scatter(sex_total[mag_sex+'_r'][is_good],
+    ax01 = fig.add_subplot(gs[0, 1])
+    ax01.scatter(sex_total[mag_sex+'_r'][is_good],
                    22.5 - 2.5 * np.log10(leg_total['flux_r'][is_good]),
                    alpha = 0.01,
                    s = 1)
-    axs[1, 1].hist(sex_total[mag_sex+'_r'][is_good],
+    ax11 = fig.add_subplot(gs[1, 1], sharex=ax01)
+    ax11.scatter(sex_total[mag_sex+'_r'][is_good],
+                   sex_total[mag_sex+'_r'][is_good] - (22.5 - 2.5 * np.log10(leg_total['flux_r'][is_good])),
+                   alpha = 0.01,
+                   s = 1)
+    ax21 = fig.add_subplot(gs[2, 1])
+    ax21.hist(sex_total[mag_sex+'_r'][is_good],
                    bins=np.arange(15, 26, 0.5),
-                   label='Our 300s single exposure (SEx)',
+                   label='Our catalog',
                    histtype='step')
-    axs[1, 1].hist(22.5 - 2.5 * np.log10(leg_total['flux_r'][is_good]),
-                   bins=np.arange(15.2, 26, 0.5),
-                   label='DECaLS ~100s exposure(s) (Tractor)',
+    ax21.hist(22.5 - 2.5 * np.log10(leg_total['flux_r'][is_good]),
+                   bins=np.arange(15.1, 26, 0.5),
+                   label='DECaLS ~100s \n exposure(s) (Tractor)',
                    histtype='step')
 
-    axs[0, 0].text(15, 13, 'A2670', fontsize=24)
-    axs[0, 0].set_title('g band')
-    axs[0, 1].set_title('r band')
-    axs[0, 0].set_xlim([mag_lim_faint, mag_lim_bright])
-    axs[0, 1].set_xlim([mag_lim_faint, mag_lim_bright])
-    axs[0, 0].set_ylim([mag_lim_faint, mag_lim_bright])
-    axs[0, 1].set_ylim([mag_lim_faint, mag_lim_bright])
+    # axs[0, 0].text(25, 13, 'Match to DECaLS (A2670)', fontsize=24)
+    ax00.text(25, 16, 'g', fontsize=24)
+    ax01.text(25, 16, 'r', fontsize=24)
+    # axs[0, 0].set_title('g band')
+    # axs[0, 1].set_title('r band')
+    ax00.set_xlim([mag_lim_faint, mag_lim_bright])
+    ax01.set_xlim([mag_lim_faint, mag_lim_bright])
+    ax00.set_ylim([mag_lim_faint, mag_lim_bright])
+    ax01.set_ylim([mag_lim_faint, mag_lim_bright])
     # axs[0].invert_xaxis()
     # axs[1].invert_xaxis()
-    axs[0, 0].set_xlabel('SEx MAG_AUTO (60s)')
-    axs[0, 1].set_xlabel('SEx MAG_AUTO (300s)')
-    axs[0, 0].set_ylabel('DECaLS Tractor (~140s)')
-    axs[0, 1].set_ylabel('DECaLS Tractor (~100s)')
-    axs[0, 0].plot([mag_lim_faint, mag_lim_bright], [mag_lim_faint, mag_lim_bright], linestyle=':', alpha=0.5)
-    axs[0, 1].plot([mag_lim_faint, mag_lim_bright], [mag_lim_faint, mag_lim_bright], linestyle=':', alpha=0.5)
+    ax10.set_xlabel('Our catalog')
+    ax11.set_xlabel('Our catalog')
+    ax10.set_ylim([-0.5, 0.5])
+    ax11.set_ylim([-0.5, 0.5])
+    ax10.set_ylabel('Ours - DECaLS (mag)')
 
-    axs[0, 0].set_aspect('equal', 'box')
-    axs[0, 1].set_aspect('equal', 'box')
+    ax00.set_ylabel('DECaLS Tractor (~140s)')
+    ax01.set_ylabel('DECaLS Tractor (~100s)')
+    ax00.plot([mag_lim_faint, mag_lim_bright], [mag_lim_faint, mag_lim_bright], linestyle=':', alpha=0.5)
+    ax01.plot([mag_lim_faint, mag_lim_bright], [mag_lim_faint, mag_lim_bright], linestyle=':', alpha=0.5)
 
-    axs[1, 0].legend(loc='upper left', fontsize='small')
-    axs[1, 1].legend(loc='upper left', fontsize='small')
-fig.savefig(plot_dir + 'DECaL_vs_DECam_A2670.png')
+    ax00.set_aspect('equal', 'box')
+    ax01.set_aspect('equal', 'box')
+
+    ax20.legend(loc='upper left', fontsize='small')
+    ax21.legend(loc='upper left', fontsize='small')
+
+    ax20.set_xlabel('g')
+    ax21.set_xlabel('r')
+    ax20.set_ylabel('N')
+    ax21.set_ylabel('N')
+fig.savefig(plot_dir + 'DECaL_vs_DECam_merged_A2670.png')
