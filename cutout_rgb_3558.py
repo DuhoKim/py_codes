@@ -32,13 +32,14 @@ stretches = [0.08 + 0.02 * exp for exp in range(-2, -1)]
 x_stddev = [0.5 * exp for exp in range(1, 2)]
 n = 3
 
+cluster = 'A2670'
 is_rgb_only = False
 is_grey_only = False
 is_r_grey_only = False
 is_u_g_too = False
-save_dir = ab.work_dir + 'pics/A3558_cutout_all/'
+save_dir = ab.work_dir + f'pics/{cluster}_cutout/'
 # save_dir = ab.work_dir + 'gui/A3558/'
-cmap = 'gray'
+cmap = 'binary'
 
 def tile_check(headers, headers_d, coord, hthumb):
     # read the celestial coordinate
@@ -56,23 +57,29 @@ def tile_check(headers, headers_d, coord, hthumb):
 
     return 0, 0, 0
 
-with fits.open(ab.work_dir + 'fits/stacked/A3558_usi.fits') as hdu_u,  \
-    fits.open(ab.work_dir + 'fits/stacked/A3558_usd.fits') as hdu_ud,  \
-    fits.open(ab.work_dir + 'fits/stacked/A3558_gsi.fits') as hdu_g,   \
-    fits.open(ab.work_dir + 'fits/stacked/A3558_gsd.fits') as hdu_gd,   \
-    fits.open(ab.work_dir + 'fits/stacked/A3558_rsi.fits') as hdu_r,    \
-    fits.open(ab.work_dir + 'fits/stacked/A3558_rsd.fits') as hdu_rd:
+with fits.open(ab.work_dir + f'fits/stacked/{cluster}_usi.fits') as hdu_u,  \
+    fits.open(ab.work_dir + f'fits/stacked/{cluster}_usd.fits') as hdu_ud,  \
+    fits.open(ab.work_dir + f'fits/stacked/{cluster}_gsi.fits') as hdu_g,   \
+    fits.open(ab.work_dir + f'fits/stacked/{cluster}_gsd.fits') as hdu_gd,   \
+    fits.open(ab.work_dir + f'fits/stacked/{cluster}_rsi.fits') as hdu_r,    \
+    fits.open(ab.work_dir + f'fits/stacked/{cluster}_rsd.fits') as hdu_rd:
 
-    cat = ascii.read("/Users/duhokim/work/abell/spec/Shapley/catalog.dat")
+    # cat = ascii.read("/Users/duhokim/work/abell/spec/Shapley/catalog.dat")
+    cat = ascii.read("/Users/duhokim/work/abell/cat/sheen_2012_table_6.txt")
 
-    for i in range(3100, len(cat)):
+    for i in range(0, 1):
+    # for i in range(0, len(cat)):
     # for i in range(3322, 3323):
 
-        c = SkyCoord(f"{cat['col3'][i]}:{cat['col4'][i]}:{cat['col5'][i]} "
-                     f"{cat['col6'][i]}:{cat['col7'][i]}:{cat['col8'][i]}", unit=(u.hourangle, u.deg))
+        # c = SkyCoord(f"{cat['col3'][i]}:{cat['col4'][i]}:{cat['col5'][i]} "
+        #              f"{cat['col6'][i]}:{cat['col7'][i]}:{cat['col8'][i]}", unit=(u.hourangle, u.deg))
 
-        half_thumb = int(np.sqrt(cat['col13'][i])) * 4      # 4 x major axis as a box size
-        z = cat['col18'][i]/const.c*1e3                     # redshift
+        # half_thumb = int(np.sqrt(cat['col13'][i])) * 4      # 4 x major axis as a box size
+        # z = cat['col18'][i]/const.c*1e3                     # redshift
+
+        c = SkyCoord(f"{cat['col2'][i]} {cat['col3'][i]}", unit=(u.hourangle, u.deg))
+        half_thumb = 200  # 4 x major axis as a box size
+        z = cat['col9'][i]  # redshift
         kpc_arcmin = Cosmo.kpc_proper_per_arcmin(z)         # xxx kpc / arcmin
         arcmin_5kpc = 5.0 / kpc_arcmin                      # xxx arcmin / 5 kpc
         pixel_5kpc = arcmin_5kpc * 60.0 / 0.2637              # xxx pixel / 5 kpc
@@ -107,14 +114,14 @@ with fits.open(ab.work_dir + 'fits/stacked/A3558_usi.fits') as hdu_u,  \
                 stretch_r[np.isnan(stretch_r)] = 0
                 plt.imshow(stretch_r, origin='lower', cmap=cmap)
                 plt.savefig(save_dir + f'{i + 1}_r_jar.png')
-                stretch_r = img_scale.sqrt(cutout_r)
+                stretch_r = img_scale.sqrt(cutout_r, scale_min=0, scale_max=0.1)
                 stretch_r[np.isnan(stretch_r)] = 0
-                plt.imshow(stretch_r, origin='lower', cmap=cmap)
-                plt.savefig(save_dir + f'{i + 1}_r_sqrt.png')
-                stretch_r = img_scale.asinh(cutout_r)
+                plt.imshow(stretch_r, origin='lower', cmap='rainbow')
+                plt.savefig(save_dir + f'{i + 1}_r_sqrt_01_rainbow.png')
+                stretch_r = img_scale.asinh(cutout_r, scale_min=0, scale_max=0.1)
                 stretch_r[np.isnan(stretch_r)] = 0
-                plt.imshow(stretch_r, origin='lower', cmap=cmap)
-                plt.savefig(save_dir + f'{i + 1}_r_asinh.png')
+                plt.imshow(stretch_r, origin='lower', cmap='hot')
+                plt.savefig(save_dir + f'{i + 1}_r_asinh_01_hot.png')
                 plt.close(fig)
             if is_r_grey_only:
                 continue
@@ -159,6 +166,7 @@ with fits.open(ab.work_dir + 'fits/stacked/A3558_usi.fits') as hdu_u,  \
                         img_sqrt_0_3 = np.zeros((calib_r.shape[0], calib_r.shape[1], 3), dtype=float)
                         if tile_u_big and tile_g_big and tile_r_big:
                             img_sqrt_0_01 = np.zeros((calib_r_big.shape[0], calib_r_big.shape[1], 3), dtype=float)
+                            img_sqrt_0_001 = np.zeros((calib_r_big.shape[0], calib_r_big.shape[1], 3), dtype=float)
                         img_jarret = np.zeros((calib_r.shape[0], calib_r.shape[1], 3), dtype=float)
                         minval = 0
                         maxval = 1
@@ -175,6 +183,15 @@ with fits.open(ab.work_dir + 'fits/stacked/A3558_usi.fits') as hdu_u,  \
                             img_sqrt_0_01[:,:,2] = img_scale.sqrt(calib_u_big,
                                                         scale_min=0,
                                                         scale_max=0.1)
+                            img_sqrt_0_001[:,:,0] = img_scale.sqrt(calib_r_big,
+                                                        scale_min=0,
+                                                        scale_max=0.01)
+                            img_sqrt_0_001[:,:,1] = img_scale.sqrt(calib_g_big,
+                                                        scale_min=0,
+                                                        scale_max=0.01)
+                            img_sqrt_0_001[:,:,2] = img_scale.sqrt(calib_u_big,
+                                                        scale_min=0,
+                                                        scale_max=0.01)
                         img_sqrt_0_3[:,:,0] = img_scale.sqrt(calib_r,
                                                     scale_min=0,
                                                     scale_max=3)
@@ -216,6 +233,10 @@ with fits.open(ab.work_dir + 'fits/stacked/A3558_usi.fits') as hdu_u,  \
                             plt.plot([10, 10 + pixel_5kpc.value], [10, 10], color='white')
                             plt.text(10, 15, f'5kpc at z={z:5.3f}',color='white')
                             plt.savefig(save_dir + f'{i + 1}_rgb_sqrt_0_01_big.png')
+                            plt.imshow(img_sqrt_0_001, aspect='equal', origin='lower', cmap='rainbow')
+                            # plt.plot([10, 10 + pixel_5kpc.value], [10, 10], color='white')
+                            # plt.text(10, 15, f'5kpc at z={z:5.3f}',color='white')
+                            plt.savefig(save_dir + f'{i + 1}_rgb_sqrt_0_001_big.png')
                         plt.close(fig)
                         ###
                     else:

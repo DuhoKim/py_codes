@@ -109,14 +109,15 @@ for k in range(0, len(clusters)):
         axs2[k, i].set_xlabel('single exposure')
         # axs[k, i].invert_xaxis()
         # axs[k, i].invert_yaxis()
-        axs[k, i].text(0.1, 0.9,
+        axs[k, i].text(0.1, 0.85,
                        band[i]+' = '+band[i]+'_inst (ZP=25) + {:6.4f}'.format(model.params[0]),
                        transform = axs[k, i].transAxes)
         # axs[k, i].text(29, 14, r'$\chi^2$/# = {:7.3f}'.format(minchi/len(single_matches)))
-        axs[k, i].text(0.1, 0.8,
+        axs[k, i].text(0.1, 0.7,
                        '# of sample = {:4d}'.format(len(ind[0])),
                        transform = axs[k, i].transAxes)
         # axs[k, i].legend(title='Standard Star Field (Airmass)(#)', loc='lower right', prop={'size':7})
+        axs[k, i].set_ylim([model.params[0]-5, model.params[0]+5])
         axs2[k, i].text(0.1, 0.4, band[i])
 
         axs1[k, i].hist(single_cat['MAG_AUTO_'+band[i]],

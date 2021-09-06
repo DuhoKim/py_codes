@@ -32,8 +32,8 @@ for k in range(0, len(ab.clusters)):
 
     sex_cat = ascii.read(ab.sex_dir+f'DECam_merged_SEx_cat_{ab.clusters[k]}_Gal_ext_corrected_{ab.ver}.txt')
 
-    good_g = (sex_cat[ab.mag_sys+'_g'] < 30) #& (sex_cat[ab.mag_sys+'_r'] < xran[1])
-    good_u = (sex_cat[ab.mag_sys+'_u'] < 30) #& (sex_cat[ab.mag_sys+'_r'] < xran[1])
+    good_g = (sex_cat[ab.mag_sys+'_g'] < 30) & (sex_cat['CLASS_STAR'] < xran[1])
+    good_u = (sex_cat[ab.mag_sys+'_u'] < 30) & (sex_cat[ab.mag_sys+'_r'] < xran[1])
 
     axs[0, k].scatter(sex_cat[ab.mag_sys+'_r'][good_g],# - ab.distmod[k],
                       sex_cat[ab.mag_sys+'_g'][good_g] - sex_cat[ab.mag_sys+'_r'][good_g],
@@ -172,5 +172,5 @@ axs2[0].set_ylabel('g - r')
 axs2[1].set_ylabel('u - r')
 axs2[0].legend(loc='lower left', fontsize='large')
 
-fig.savefig(ab.plot_dir + 'CMD_merged_'+ab.ver+'.png')
-fig2.savefig(ab.plot_dir + 'CMD_allinone_'+ab.ver+'.png')
+fig.savefig(ab.plot_dir + 'CMD_merged_'+ab.ver+'_0825.png')
+fig2.savefig(ab.plot_dir + 'CMD_allinone_'+ab.ver+'_0825.png')

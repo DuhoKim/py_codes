@@ -3,6 +3,7 @@ import abell_cluster_module as ab
 from astropy.coordinates import SkyCoord
 from scipy import constants as const
 import my_module as mm
+from astropy import units as u
 import importlib
 importlib.reload(mm)
 importlib.reload(ab)
@@ -34,13 +35,14 @@ color = ['blue', 'cyan', 'magenta', 'yellow', 'green', 'red']
 #         reg.writelines(f"j2000; circle({cat['ra'][j]}, {cat['dec'][j]}, 10\") # color={color}\n")
 
 # fn = "/Users/duhokim/work/abell/spec/"
-# with open(fn+'A2670_spec.txt', 'w') as mem:
+# with open(fn+'A2670_spec.radec', 'w') as mem:
 #     cnt = 0
 #     cat = ascii.read(fn + 'SDSS/A2670.csv')
 #     for i in range(0, len(cat)):
 #         if cat['z'][i] > 0.066 and cat['z'][i] < 0.086:
 #             cnt = cnt + 1
-#             mem.writelines(f"{cnt} {cat['ra'][i]} {cat['dec'][i]} {cat['z'][i]} {cat['zErr'][i]} \n")
+#             # mem.writelines(f"{cnt} {cat['ra'][i]} {cat['dec'][i]} {cat['z'][i]} {cat['zErr'][i]} \n")
+#             mem.writelines(f"{cat['ra'][i]} {cat['dec'][i]} \n")
 
 ## from Visir catalog
 # fn = "/Users/duhokim/work/abell/spec/"
@@ -60,7 +62,7 @@ color = ['blue', 'cyan', 'magenta', 'yellow', 'green', 'red']
 
 ### KYDISC + Shapley
 # fn = "/Users/duhokim/work/abell/spec/"
-# with open(fn+'A3574_spec.txt', 'w') as merged:
+# with open(fn+'A3574_spec.radec', 'w') as merged:
 #     cnt = 0
 #     cat = ascii.read(fn+'KYDISC/Oh+2019_A3574.txt')
 #     for j in range(0, len(cat)):
@@ -68,7 +70,8 @@ color = ['blue', 'cyan', 'magenta', 'yellow', 'green', 'red']
 #         # coord_sha = SkyCoord(f"{cat['col2'][j]}:{cat['col3'][j]}:{cat['col4'][j]} "
 #         #                      f"{cat['col5'][j]}:{cat['col6'][j]}:{cat['col7'][j]}",
 #         #                     unit = (u.hourangle, u.deg))
-#         merged.writelines(f"{cnt} {cat['col10'][j]} {cat['col11'][j]} {cat['col12'][j]} {cat['col13'][j]} \n")
+#         # merged.writelines(f"{cnt} {cat['col10'][j]} {cat['col11'][j]} {cat['col12'][j]} {cat['col13'][j]} \n")
+#         merged.writelines(f"{cat['col10'][j]} {cat['col11'][j]} \n")
 #
 #     sha = ascii.read(fn+'Shapley/catalog.dat')
 #     for i in range(0, len(sha)):
@@ -79,38 +82,80 @@ color = ['blue', 'cyan', 'magenta', 'yellow', 'green', 'red']
 #             coord_sha = SkyCoord(f"{sha['col3'][i]}:{sha['col4'][i]}:{sha['col5'][i]} "
 #                                  f"{sha['col6'][i]}:{sha['col7'][i]}:{sha['col8'][i]}",
 #                                 unit = (u.hourangle, u.deg))
-#             merged.writelines(f"{cnt} {coord_sha.ra.value} {coord_sha.dec.value} {z} {ze} \n")
+#             # merged.writelines(f"{cnt} {coord_sha.ra.value} {coord_sha.dec.value} {z} {ze} \n")
+#             merged.writelines(f"{coord_sha.ra.value} {coord_sha.dec.value} \n")
+
+
+### KYDISC
+# fn = "/Users/duhokim/work/abell/spec/"
+# with open(fn+'A3659_spec.radec', 'w') as merged:
+#     cnt = 0
+#     cat = ascii.read(fn+'KYDISC/Oh+2019_A3659.txt')
+#     for j in range(0, len(cat)):
+#         cnt = cnt + 1
+#         # coord_sha = SkyCoord(f"{cat['col2'][j]}:{cat['col3'][j]}:{cat['col4'][j]} "
+#         #                      f"{cat['col5'][j]}:{cat['col6'][j]}:{cat['col7'][j]}",
+#         #                     unit = (u.hourangle, u.deg))
+#         # merged.writelines(f"{cnt} {cat['col10'][j]} {cat['col11'][j]} {cat['col12'][j]} {cat['col13'][j]} \n")
+#         merged.writelines(f"{cat['col10'][j]} {cat['col11'][j]} \n")
 
 ## merge WINGS+OmegaWINGS
-fn = "/Users/duhokim/work/abell/spec/"
-with open(fn + 'A754_spec.txt', 'w') as merged:
-    cnt = 0
-    wings = ascii.read(fn + 'WINGS/WINGS_Cava+2009_A754.txt')
-    for i in range(0, len(wings)):
-        if wings['col8'][i]:
-            cnt = cnt + 1
-            z = wings['col5'][i]/const.c*1e3
-            coord = SkyCoord(wings['col2'][i], wings['col3'][i], unit='deg')
-            dist = mm.clcendist(ab.redshifts[0], z, ab.coords_cl[0], coord)
-            merged.writelines(f"{cnt} {coord.ra.value} {coord.dec.value} {z} {wings['col6'][i]/const.c*1e3} {dist} \n")
-    omega = ascii.read(fn + 'WINGS/OmegaWINGS_Moretti+2017_A754.txt')
-    for i in range(0, len(omega)):
-        if omega['col10'][i]:
-            cnt = cnt + 1
-            z = omega['col6'][i]
-            coord = SkyCoord(omega['col4'][i], omega['col5'][i], unit='deg')
-            dist = mm.clcendist(ab.redshifts[0], z, ab.coords_cl[0], coord)
-            merged.writelines(f"{cnt} {coord.ra.value} {coord.dec.value} {z} {omega['col7'][i]} {dist} \n")
+# fn = "/Users/duhokim/work/abell/spec/"
+# with open(fn + 'A754_spec.radec', 'w') as merged:
+#     cnt = 0
+#     wings = ascii.read(fn + 'WINGS/WINGS_Cava+2009_A754.txt')
+#     for i in range(0, len(wings)):
+#         if wings['col8'][i]:
+#             cnt = cnt + 1
+#             z = wings['col5'][i]/const.c*1e3
+#             coord = SkyCoord(wings['col2'][i], wings['col3'][i], unit='deg')
+#             dist = mm.clcendist(ab.redshifts[0], z, ab.coords_cl[0], coord)
+#             # merged.writelines(f"{cnt} {coord.ra.value} {coord.dec.value} {z} {wings['col6'][i]/const.c*1e3} {dist} \n")
+#             merged.writelines(
+#                 f"{coord.ra.value} {coord.dec.value} \n")
+#     omega = ascii.read(fn + 'WINGS/OmegaWINGS_Moretti+2017_A754.txt')
+#     for i in range(0, len(omega)):
+#         if omega['col10'][i]:
+#             cnt = cnt + 1
+#             z = omega['col6'][i]
+#             coord = SkyCoord(omega['col4'][i], omega['col5'][i], unit='deg')
+#             dist = mm.clcendist(ab.redshifts[0], z, ab.coords_cl[0], coord)
+#             # merged.writelines(f"{cnt} {coord.ra.value} {coord.dec.value} {z} {omega['col7'][i]} {dist} \n")
+#             merged.writelines(f"{coord.ra.value} {coord.dec.value} \n")
+
+# fn = "/Users/duhokim/work/abell/spec/"
+# with open(fn + 'A2399_spec.radec', 'w') as merged:
+#     cnt = 0
+#     wings = ascii.read(fn + 'WINGS/WINGS_Cava+2009_A2399.txt')
+#     for i in range(0, len(wings)):
+#         if wings['col8'][i]:
+#             cnt = cnt + 1
+#             z = wings['col5'][i]/const.c*1e3
+#             coord = SkyCoord(wings['col2'][i], wings['col3'][i], unit='deg')
+#             dist = mm.clcendist(ab.redshifts[0], z, ab.coords_cl[0], coord)
+#             # merged.writelines(f"{cnt} {coord.ra.value} {coord.dec.value} {z} {wings['col6'][i]/const.c*1e3} {dist} \n")
+#             merged.writelines(
+#                 f"{coord.ra.value} {coord.dec.value} \n")
+#     omega = ascii.read(fn + 'WINGS/OmegaWINGS_Moretti+2017_A2399.txt')
+#     for i in range(0, len(omega)):
+#         if omega['col10'][i]:
+#             cnt = cnt + 1
+#             z = omega['col6'][i]
+#             coord = SkyCoord(omega['col4'][i], omega['col5'][i], unit='deg')
+#             dist = mm.clcendist(ab.redshifts[0], z, ab.coords_cl[0], coord)
+#             # merged.writelines(f"{cnt} {coord.ra.value} {coord.dec.value} {z} {omega['col7'][i]} {dist} \n")
+#             merged.writelines(f"{coord.ra.value} {coord.dec.value} \n")
 
 ## merge OmegaWINGS+Shapley
 # fn = "/Users/duhokim/work/abell/spec/"
-# with open(fn + 'A3558_spec.txt', 'w') as merged:
+# with open(fn + 'A3558_spec.radec', 'w') as merged:
 #     cnt = 0
 #     omega = ascii.read(fn + 'WINGS/OmegaWINGS_Moretti+2017_A3558.txt')
 #     for i in range(0, len(omega)):
 #         if omega['col10'][i]:
 #             cnt = cnt + 1
-#             merged.writelines(f"{cnt} {omega['col4'][i]} {omega['col5'][i]} {omega['col6'][i]} {omega['col7'][i]} \n")
+#             # merged.writelines(f"{cnt} {omega['col4'][i]} {omega['col5'][i]} {omega['col6'][i]} {omega['col7'][i]} \n")
+#             merged.writelines(f"{omega['col4'][i]} {omega['col5'][i]} \n")
 #
 #     sha = ascii.read(fn+'Shapley/catalog.dat')
 #
@@ -122,7 +167,19 @@ with open(fn + 'A754_spec.txt', 'w') as merged:
 #             coord_sha = SkyCoord(f"{sha['col3'][i]}:{sha['col4'][i]}:{sha['col5'][i]} "
 #                                  f"{sha['col6'][i]}:{sha['col7'][i]}:{sha['col8'][i]}",
 #                                 unit = (u.hourangle, u.deg))
-#             merged.writelines(f"{cnt} {coord_sha.ra.value} {coord_sha.dec.value} {z} {ze} \n")
+#             # merged.writelines(f"{cnt} {coord_sha.ra.value} {coord_sha.dec.value} {z} {ze} \n")
+#             merged.writelines(f"{coord_sha.ra.value} {coord_sha.dec.value} \n")
+
+###  OmegaWINGS
+fn = "/Users/duhokim/work/abell/spec/"
+with open(fn + 'A3716_spec.radec', 'w') as merged:
+    cnt = 0
+    omega = ascii.read(fn + 'WINGS/OmegaWINGS_Moretti+2017_A3716.txt')
+    for i in range(0, len(omega)):
+        if omega['col10'][i]:
+            cnt = cnt + 1
+            # merged.writelines(f"{cnt} {omega['col4'][i]} {omega['col5'][i]} {omega['col6'][i]} {omega['col7'][i]} \n")
+            merged.writelines(f"{omega['col4'][i]} {omega['col5'][i]} \n")
 
 ### from Topcat catalog
 # fn = "/Users/duhokim/work/abell/sex/cat/A3558_g-r"
