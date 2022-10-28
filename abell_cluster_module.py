@@ -3,13 +3,37 @@ from astropy.coordinates import SkyCoord
 from astropy import units as u
 from astropy.cosmology import Planck18
 
-ver = '25rmag_dqm_edit'
-class_star_lim = 0.1
-max_sep = 0.5   # matching radius limit among each individual exposures
-mag_sys = 'MAG_AUTO'
-magerr_sys = 'MAGERR_AUTO'
-mag_lim = 25
-rad_lim = 0.8 # only include detection inside [degree]
+ver = 'spec'
+class_star_lim = 0.5
+max_sep = 1.0   # matching radius limit among each individual exposures
+mag_sys = 'MAG_BEST'
+magerr_sys = 'MAGERR_BEST'
+mag_lim = 30
+rad_lim = 2.0 # only include detection inside [degree]
+
+# ver = 'm1_psf'
+# class_star_lim = 0.5
+# max_sep = 1.0   # matching radius limit among each individual exposures
+# mag_sys = 'MAG_BEST'
+# magerr_sys = 'MAGERR_BEST'
+# mag_lim = 30
+# rad_lim = 2.0 # only include detection inside [degree]
+
+# ver = '30rmag_psf'
+# class_star_lim = 0.5
+# max_sep = 1.0   # matching radius limit among each individual exposures
+# mag_sys = 'MAG_BEST'
+# magerr_sys = 'MAGERR_BEST'
+# mag_lim = 30
+# rad_lim = 2.0 # only include detection inside [degree]
+
+# ver = '25rmag_dqm_edit'
+# class_star_lim = 0.1
+# max_sep = 0.5   # matching radius limit among each individual exposures
+# mag_sys = 'MAG_AUTO'
+# magerr_sys = 'MAGERR_AUTO'
+# mag_lim = 25
+# rad_lim = 0.8 # only include detection inside [degree]
 
 work_dir = ("/Users/duhokim/work/abell/")
 plot_dir = work_dir+'plot/'
@@ -21,7 +45,10 @@ check_dir=("/Volumes/APPLE SSD/fits/check/")
 
 clusters = ['A754', 'A2399', 'A2670', 'A3558', 'A3574', 'A3659', 'A3716']
 redshifts = [0.05450, 0.05790, 0.07619, 0.04800, 0.01600, 0.09070, 0.04620]
-r200 = [2.0, 1.7, 1.8, 2.4, 1.2, 1.2, 2.0]
+r200 = [2.4, 1.83, 1.69, 2.49, 1.2, 1.2, 2.46]
+m200 = [15.8, 7.0, 5.5, 17.6, 1.9, 2.0, 17.0]
+sig_vr = [9.7e2, 7.39e2, 6.83e2, 1.005e3, -1, -1, 9.95e2]
+vr = [1.64e4, 1.73e4, 2.28e4, 1.45e4, -1, -1, 1.37e4]
 distmod = Planck18.distmod(redshifts).value
 bands = ['u', 'g', 'r']
 
@@ -121,16 +148,27 @@ short_b = [[-0.355 * 1.19,    -0.166 * 1.07, -0.061 * 1.07],
             [-0.355 * 1.1,     -0.166 * 1.2, -0.073 * 1.09],
             [-0.2034 * 1.42,    -0.0846 * 1.31, -0.0544 * 1.09]]
 
-# # statsmodel + default SEx param
+# # statsmodel + default SEx param + psf model
+# 5sig flag inside complete (m1_lim) 005_galaxy
 stack_a = [
-    [3.962, 6.148, 6.458],
-    [4.186, 6.1368, 6.4124],
-    [3.9915, 6.1074, 6.2289],
-    [4.020, 6.176, 6.456],
-    [3.938, 6.204, 6.453],
-    [3.754, 5.776, 6.167],
-    [4.0240, 6.2455, 6.4456]
+    [4.21, 6.38, 6.61],
+    [4.25, 6.16, 6.46],
+    [4.06, 6.18, 6.28],
+    [4.23, 6.37, 6.60],
+    [4.19, 6.41, 6.60],
+    [4.22, 6.15, 6.41],
+    [4.01, 6.26, 6.43]
 ]
+
+# stack_a = [
+#     [3.922, 6.121, 6.443],
+#     [4.113, 6.060, 6.248],
+#     [3.910, 6.077, 6.073],
+#     [4.026, 6.175, 6.468],
+#     [3.968, 6.215, 6.460],
+#     [3.767, 5.755, 6.138],
+#     [3.906, 6.063, 6.361]
+# ]
 
 # irsa.ipac.caltech.edu, S and F (2011)
 mw_ext = [  [0.308, 0.240, 0.166],
@@ -140,3 +178,56 @@ mw_ext = [  [0.308, 0.240, 0.166],
             [0.247, 0.192, 0.133],
             [0.488, 0.380, 0.263],
             [0.157, 0.122, 0.085]]
+
+
+# # statsmodel + default SEx param
+# stack_a = [
+#     [3.962, 6.148, 6.458],
+#     [4.186, 6.1368, 6.4124],
+#     [3.9915, 6.1074, 6.2289],
+#     [4.020, 6.176, 6.456],
+#     [3.938, 6.204, 6.453],
+#     [3.754, 5.776, 6.167],
+#     [4.0240, 6.2455, 6.4456]
+# ]
+
+# catalog limit magnitudes which are derived from mock recovery rate become less than 1% and 90%
+short_m1 = [
+    [24.6, 26.0, 25.0],
+    [24.9, 24.6, 25.0],
+    [24.9, 24.5, 25.2],
+    [24.9, 25.6, 25.0],
+    [24.5, 25.5, 25.0],
+    [24.5, 25.3, 24.9],
+    [24.8, 25.5, 25.2]
+]
+
+short_m90 = [
+    [23.4, 24.1, 23.9],
+    [23.6, 23.2, 23.6],
+    [23.5, 23.2, 23.8],
+    [23.4, 24.1, 23.6],
+    [23.1, 24.0, 23.5],
+    [23.1, 23.7, 23.5],
+    [23.5, 24.1, 24.0]
+]
+
+stack_m1 = [
+    [25.4, 26.6, 26.6],
+    [26.8, 26.9, 26.4],
+    [25.9, 26.6, 26.4],
+    [26.1, 26.9, 26.1],
+    [24.5, 26.3, 25.9],
+    [24.4, 25.1, 25.1],
+    [25.8, 26.4, 26.3]
+]
+
+stack_m90 = [
+    [23.6, 24.5, 23.9],
+    [23.7, 24.2, 24.0],
+    [23.7, 24.3, 23.8],
+    [23.8, 24.6, 23.8],
+    [23.1, 24.2, 23.6],
+    [23.0, 23.6, 23.1],
+    [24.1, 24.3, 24.0]
+]

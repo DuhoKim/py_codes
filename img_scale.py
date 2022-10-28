@@ -125,7 +125,7 @@ def sqrt(inputArray, scale_min=None, scale_max=None):
 	
 	"""		
     
-	print("img_scale : sqrt")
+	# print("img_scale : sqrt")
 	imageData=numpy.array(inputArray, copy=True)
 	
 	if scale_min == None:
@@ -195,7 +195,7 @@ def asinh(inputArray, scale_min=None, scale_max=None, non_linear=2.0):
 	
 	"""		
     
-	print("img_scale : asinh")
+	# print("img_scale : asinh")
 	imageData=numpy.array(inputArray, copy=True)
 	
 	if scale_min == None:

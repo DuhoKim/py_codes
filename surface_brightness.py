@@ -13,6 +13,8 @@ from astropy.visualization import make_lupton_rgb
 from astropy.io import ascii
 from astropy import wcs
 import my_module as mm
+import importlib
+importlib.reload(ab)
 
 # number_of_pixel for each tile is ~ 10,000 so number of mesh will be ~10 x 10 for each tile
 mesh_sizes = [100, 500, 1000, 2000, 5000]

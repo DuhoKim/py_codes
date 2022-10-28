@@ -1,5 +1,5 @@
 from astropy.io import ascii
-from astropy.table import vstack
+from astropy.table import Table, vstack
 import numpy as np
 import time
 from astropy.coordinates import SkyCoord
@@ -10,6 +10,9 @@ from astropy import wcs
 from datetime import datetime
 from multiprocessing import Pool
 import abell_cluster_module as ab
+import importlib
+importlib.reload(ab)
+import glob
 
 def dqm_check(n):
     prev_time = start_time
@@ -68,7 +71,7 @@ for k in range(0, len(ab.clusters)):
     my_module.print_time()
 
     start_time = time.time()
-    fn = ab.sex_dir+f'DECam_merged_SEx_cat_{ab.clusters[k]}_Gal_ext_corrected_{ab.ver}_dqm_edit'
+    fn = f'{ab.work_dir}catalogue/{ab.clusters[k]}_merged_{ab.ver}'
 
     with open(fn + '.txt', 'w') as fh, open(fn + '_kron_w_text.reg', 'w') as regFile, open(fn + '_kron.reg', 'w') as regFile2, open(fn + '_kron16.reg', 'w') as regFile16, open(fn + '_kron18.reg', 'w') as regFile18:
         regFile.writelines('# Region file format: DS9 version 4.1\n')
@@ -89,32 +92,34 @@ for k in range(0, len(ab.clusters)):
             'global color=green dashlist=8 3 width=2 font="helvetica 10 normal roman" select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 source=1\n')
         regFile18.writelines('fk5\n')
 
-        fh.writelines('############################################################################################\n')
-        fh.writelines('#   This is a catalog of galaxy sources detected primarily in short-exposure and addition- #\n')
-        fh.writelines(f'# ally from stacked Abell cluster {ab.clusters[k]} mosaics in u, g, and r band taken by Dark Energy   #\n')
-        fh.writelines('# Camera (DECam) mounted at the prime focus of the Blanco 4-m telescope at CTIO. All FITS  #\n')
-        fh.writelines('# files are available on NOAO archive.                                                     #\n')
-        fh.writelines('#   Short exposures that I used for photometry are:                                        #\n')
+        fh.writelines( '############################################################################################\n')
+        fh.writelines( '#   This is a catalog of galaxy sources detected primarily in stacked and additionally fro-#\n')
+        fh.writelines(f'# m single Abell cluster {ab.clusters[k]} mosaics in u, g, and r band taken by Dark Energy    #\n')
+        fh.writelines( '# Camera (DECam) mounted at the prime focus of the Blanco 4-m telescope at CTIO. All FITS  #\n')
+        fh.writelines( '# files are available on NOAO archive.                                                     #\n')
+        fh.writelines( '#   Short exposures that I used for photometry are:                                        #\n')
         fh.writelines(f'#   {ab.clusters[k]} u-band : {str(ab.short_exp_times[k][0])}s exposure taken in {ab.short_obs_datas[k][0]}                                       #\n')
         fh.writelines(f'#   {ab.clusters[k]} g-band : {str(ab.short_exp_times[k][1])}s exposure taken in {ab.short_obs_datas[k][1]}                                       #\n')
         fh.writelines(f'#   {ab.clusters[k]} r-band : {str(ab.short_exp_times[k][2])}s exposure taken in {ab.short_obs_datas[k][2]}.                                      #\n')
-        fh.writelines('#                                                                                          #\n')
+        fh.writelines( '#                                                                                          #\n')
         fh.writelines(f'#   Stacked mosaics with {str(ab.stack_exp_times[k][0])}s, {str(ab.stack_exp_times[k][1])}s, and {str(ab.stack_exp_times[k][2])}s exposure time for u, g, and r, respectiv- #\n')
-        fh.writelines('# ely.                                                                                     #\n')
-        fh.writelines('#                           ***  Standard Star Photometry  ***                             #\n')
-        fh.writelines('#   All data are standardized using standard-star observation taken at same night as the s-#\n')
-        fh.writelines('# cience observations. I used Source Extractor to measure magnitudes of standard stars and #\n')
-        fh.writelines('# galaxies. I used MAG_APER at 14.8" diameter for measuring standard star magnitudes and   #\n')
-        fh.writelines('# compared those with Southern Standard Stars or SDSS catalogue, so that I could fit the   #\n')
-        fh.writelines('# zeropoints (ZPs) which are corrected for airmass term at each night.                     #\n')
-        fh.writelines('#                                                                                          #\n')
-        fh.writelines('#                              ***  Galaxy Photometry  ***                                 #\n')
-        fh.writelines('#   Using the ZPs, I measured galaxy magnitudes (MAG_AUTO) from the SExtractor. Galactic   #\n')
-        fh.writelines('# extinctions were corrected using the values from http://irsa.ipac.caltech.edu.           #\n')
+        fh.writelines( '# ely.                                                                                     #\n')
+        fh.writelines( '#                           ***  Standard Star Photometry  ***                             #\n')
+        fh.writelines( '#   All data are standardized using standard-star observation taken at same night as the s-#\n')
+        fh.writelines( '# cience observations. I used Source Extractor to measure magnitudes of standard stars and #\n')
+        fh.writelines( '# galaxies. I used MAG_APER at 14.8" diameter for measuring standard star magnitudes and   #\n')
+        fh.writelines( '# compared those with Southern Standard Stars or SDSS catalogue, so that I could fit the   #\n')
+        fh.writelines( '# zeropoints (ZPs) which are corrected for airmass term at each night.                     #\n')
+        fh.writelines( '#                                                                                          #\n')
+        fh.writelines( '#                              ***  Galaxy Photometry  ***                                 #\n')
+        fh.writelines( '#   Using the ZPs, I measured galaxy magnitudes (MAG_BEST) from the SExtractor. Extinction #\n')
+        fh.writelines(f'# by dust in Milky Way on this region of sky are {ab.mw_ext[k][0]}, {ab.mw_ext[k][1]}, and #\n')
+        fh.writelines(f'# {ab.mw_ext[k][2]} in u, g, and r, respectively (http://irsa.ipac.caltech.edu). All magnit-#\n')
+        fh.writelines('# udes in this catalog are not corrected for the Galactic extinction.                      #\n')
         fh.writelines('#                                                                                          #\n')
         fh.writelines('#                               ***  Sample Selection  ***                                 #\n')
-        fh.writelines(f'#  This catalogue include galaxies with SExtractor parameter \'CLASS_STAR\' < {ab.class_star_lim} (close to  #\n')
-        fh.writelines(f'# 0: likely to be galaxies, close to 1: likely to be stars), r-band mag < {ab.mag_lim}, galactic #\n')
+        fh.writelines(f'#  This catalog include sources with SExtractor parameter \'CLASS_STAR\' < {ab.class_star_lim} (close to  #\n')
+        fh.writelines(f'# 0: likely to be galaxies, close to 1: likely to be stars), r-band mag < {ab.stack_m1[k][2]}, galactic #\n')
         fh.writelines('# central stacked DQM (Data Quality Mask; DECam pipeline product) pixel values are zero,   #\n')
         fh.writelines('# and detected in at least two bands to avoid the false detection in the single band.      #\n')
         fh.writelines('# The u-band and g-band magnitudes are added if there were matched sources within 1\" radii #\n')
@@ -132,39 +137,65 @@ for k in range(0, len(ab.clusters)):
         fh.writelines('#   4 A_WORLD                Profile RMS along major axis (world units)           [arcsec] #\n')
         fh.writelines('#   5 B_WORLD                Profile RMS along minor axis (world units)           [arcsec] #\n')
         fh.writelines('#   6 CLASS_STAR             S/G classifier output                                         #\n')
-        fh.writelines('#   7 MAG_AUTO_u             Kron-like elliptical aperture magnitude in u band    [mag]    #\n')
-        fh.writelines('#   8 MAGERR_AUTO_u          RMS error for AUTO magnitude in u band               [mag]    #\n')
-        fh.writelines('#   9 MAG_AUTO_g             Kron-like elliptical aperture magnitude in g band    [mag]    #\n')
-        fh.writelines('#  10 MAGERR_AUTO_g          RMS error for AUTO magnitude in g band               [mag]    #\n')
-        fh.writelines('#  11 MAG_AUTO_r             Kron-like elliptical aperture magnitude in r band    [mag]    #\n')
-        fh.writelines('#  12 MAGERR_AUTO_r          RMS error for AUTO magnitude in r band               [mag]    #\n')
-        fh.writelines('#  13 FROM_WHERE_u           Source of MAG_AUTO_u     [0:single, 1:stacked, 2:no match]    #\n')
-        fh.writelines('#  14 FROM_WHERE_g           Source of MAG_AUTO_g     [0:single, 1:stacked, 2:no match]    #\n')
-        fh.writelines('#  15 FROM_WHERE_r           Source of MAG_AUTO_r     [0:single, 1:stacked, 2:no match]    #\n')
+        fh.writelines('#   7 MAG_BEST_u             MAG_AUTO, or MAG_ISOCOR if crowded in u band         [mag]    #\n')
+        fh.writelines('#   8 MAGERR_BEST_u          RMS error for BEST magnitude in u band               [mag]    #\n')
+        fh.writelines('#   9 MAG_BEST_g             MAG_AUTO, or MAG_ISOCOR if crowded in g band         [mag]    #\n')
+        fh.writelines('#  10 MAGERR_BEST_g          RMS error for BEST magnitude in g band               [mag]    #\n')
+        fh.writelines('#  11 MAG_BEST_r             MAG_AUTO, or MAG_ISOCOR if crowded in r band         [mag]    #\n')
+        fh.writelines('#  12 MAGERR_BEST_r          RMS error for AUTO magnitude in r band               [mag]    #\n')
+        fh.writelines('#  13 FROM_WHERE_u           Source of MAG_BEST_u     [0:single, 1:stacked, 2:no match]    #\n')
+        fh.writelines('#  14 FROM_WHERE_g           Source of MAG_BEST_g     [0:single, 1:stacked, 2:no match]    #\n')
+        fh.writelines('#  15 FROM_WHERE_r           Source of MAG_BEST_r     [0:single, 1:stacked, 2:no match]    #\n')
         fh.writelines('############################################################################################\n')
 
-        # read SEx cat
-        sex_cat_u = ascii.read(ab.short_cat_dir + ab.short_cat_fn[k][0] + '_deblend.cat')
-        sex_cat_g = ascii.read(ab.short_cat_dir + ab.short_cat_fn[k][1] + '_deblend.cat')
-        sex_cat_r = ascii.read(ab.short_cat_dir + ab.short_cat_fn[k][2] + '_deblend.cat')
+        # read SEx cats for each tile and merge
+        sex_cat_u = Table()
+        sex_cat_g = Table()
+        sex_cat_r = Table()
+        sex_cat_u_stack = Table()
+        sex_cat_g_stack = Table()
+        sex_cat_r_stack = Table()
 
-        sex_cat_u_stack = ascii.read(ab.work_dir + 'sex/cat/stack/' + ab.clusters[k] + '_usi.cat')
-        sex_cat_g_stack = ascii.read(ab.work_dir + 'sex/cat/stack/' + ab.clusters[k] + '_gsi.cat')
-        sex_cat_r_stack = ascii.read(ab.work_dir + 'sex/cat/stack/' + ab.clusters[k] + '_rsi.cat')
+        u_cat_fns = glob.glob(f'{ab.work_dir}sex/run_short/{ab.clusters[k]}_usi_*_psf.cat')
+        g_cat_fns = glob.glob(f'{ab.work_dir}sex/run_short/{ab.clusters[k]}_gsi_*_psf.cat')
+        r_cat_fns = glob.glob(f'{ab.work_dir}sex/run_short/{ab.clusters[k]}_rsi_*_psf.cat')
+
+        for u_cat_fn in u_cat_fns:
+            u_cat = ascii.read(u_cat_fn)
+            sex_cat_u = vstack([sex_cat_u, u_cat])
+        for g_cat_fn in g_cat_fns:
+            g_cat = ascii.read(g_cat_fn)
+            sex_cat_g = vstack([sex_cat_g, g_cat])
+        for r_cat_fn in r_cat_fns:
+            r_cat = ascii.read(r_cat_fn)
+            sex_cat_r = vstack([sex_cat_r, r_cat])
+
+        u_cat_fns = glob.glob(f'{ab.work_dir}sex/run_stack/{ab.clusters[k]}_usi_*_psf_nan.cat')
+        g_cat_fns = glob.glob(f'{ab.work_dir}sex/run_stack/{ab.clusters[k]}_gsi_*_psf_nan.cat')
+        r_cat_fns = glob.glob(f'{ab.work_dir}sex/run_stack/{ab.clusters[k]}_rsi_*_psf_nan.cat')
+
+        for u_cat_fn in u_cat_fns:
+            u_cat = ascii.read(u_cat_fn)
+            sex_cat_u_stack = vstack([sex_cat_u_stack, u_cat])
+        for g_cat_fn in g_cat_fns:
+            g_cat = ascii.read(g_cat_fn)
+            sex_cat_g_stack = vstack([sex_cat_g_stack, g_cat])
+        for r_cat_fn in r_cat_fns:
+            r_cat = ascii.read(r_cat_fn)
+            sex_cat_r_stack = vstack([sex_cat_r_stack, r_cat])
 
         # add column for FROM_WHERE parameter
         sex_cat_u.add_column(np.zeros(len(sex_cat_u)), name='FROM_WHERE')
         sex_cat_g.add_column(np.zeros(len(sex_cat_g)), name='FROM_WHERE')
         sex_cat_r.add_column(np.zeros(len(sex_cat_r)), name='FROM_WHERE')
-
         sex_cat_u_stack.add_column(np.ones(len(sex_cat_u_stack)), name='FROM_WHERE')
         sex_cat_g_stack.add_column(np.ones(len(sex_cat_g_stack)), name='FROM_WHERE')
         sex_cat_r_stack.add_column(np.ones(len(sex_cat_r_stack)), name='FROM_WHERE')
 
         # standardize magnitudes and Milky Way extinction correction
-        sex_cat_u[ab.mag_sys] = sex_cat_u[ab.mag_sys] + ab.short_a[k][0] + ab.short_b[k][0] - ab.mw_ext[k][0]
-        sex_cat_g[ab.mag_sys] = sex_cat_g[ab.mag_sys] + ab.short_a[k][1] + ab.short_b[k][1] - ab.mw_ext[k][1]
-        sex_cat_r[ab.mag_sys] = sex_cat_r[ab.mag_sys] + ab.short_a[k][2] + ab.short_b[k][2] - ab.mw_ext[k][2]
+        sex_cat_u[ab.mag_sys] = sex_cat_u[ab.mag_sys] + ab.short_a[k][0] + ab.short_b[k][0] #- ab.mw_ext[k][0]
+        sex_cat_g[ab.mag_sys] = sex_cat_g[ab.mag_sys] + ab.short_a[k][1] + ab.short_b[k][1] #- ab.mw_ext[k][1]
+        sex_cat_r[ab.mag_sys] = sex_cat_r[ab.mag_sys] + ab.short_a[k][2] + ab.short_b[k][2] #- ab.mw_ext[k][2]
 
         # ZP already include MW extinction correction
         sex_cat_u_stack[ab.mag_sys] = sex_cat_u_stack[ab.mag_sys] + ab.stack_a[k][0] #- ab.mw_ext[k][0]
@@ -174,29 +205,26 @@ for k in range(0, len(ab.clusters)):
         # match stack SEx sources to short SEx to avoid duplication
         coords_u_single = SkyCoord(sex_cat_u['ALPHA_J2000'], sex_cat_u['DELTA_J2000'], unit='deg')
         coords_u_stack = SkyCoord(sex_cat_u_stack['ALPHA_J2000'], sex_cat_u_stack['DELTA_J2000'], unit='deg')
-        idx_u_stack, d2d, d3d = coords_u_stack.match_to_catalog_sky(coords_u_single)
-        matched_u_stack = (d2d.arcsec < ab.max_sep)
+        idx_u_stack, d2d, d3d = coords_u_single.match_to_catalog_sky(coords_u_stack)
+        matched_u_single = (d2d.arcsec < ab.max_sep)
 
         coords_g_single = SkyCoord(sex_cat_g['ALPHA_J2000'], sex_cat_g['DELTA_J2000'], unit='deg')
         coords_g_stack = SkyCoord(sex_cat_g_stack['ALPHA_J2000'], sex_cat_g_stack['DELTA_J2000'], unit='deg')
-        idx_g_stack, d2d, d3d = coords_g_stack.match_to_catalog_sky(coords_g_single)
-        matched_g_stack = (d2d.arcsec < ab.max_sep)
+        idx_g_stack, d2d, d3d = coords_g_single.match_to_catalog_sky(coords_g_stack)
+        matched_g_single = (d2d.arcsec < ab.max_sep)
 
         coords_r_single = SkyCoord(sex_cat_r['ALPHA_J2000'], sex_cat_r['DELTA_J2000'], unit='deg')
         coords_r_stack = SkyCoord(sex_cat_r_stack['ALPHA_J2000'], sex_cat_r_stack['DELTA_J2000'], unit='deg')
-        idx_r_stack, d2d, d3d = coords_r_stack.match_to_catalog_sky(coords_r_single)
-        matched_r_stack = (d2d.arcsec < ab.max_sep)
+        idx_r_stack, d2d, d3d = coords_r_single.match_to_catalog_sky(coords_r_stack)
+        matched_r_single = (d2d.arcsec < ab.max_sep)
 
-        # merge stack & short /  base is short to include deblended bright sources from short exposure
-        merged_u = vstack([sex_cat_u, sex_cat_u_stack[~matched_u_stack]])
-        merged_g = vstack([sex_cat_g, sex_cat_g_stack[~matched_g_stack]])
-        merged_r = vstack([sex_cat_r, sex_cat_r_stack[~matched_r_stack]])
+        # merge stack & short /  base is stack and include deblended bright sources from short exposure
+        merged_u = vstack([sex_cat_u_stack, sex_cat_u[~matched_u_single]])
+        merged_g = vstack([sex_cat_g_stack, sex_cat_g[~matched_g_single]])
+        merged_r = vstack([sex_cat_r_stack, sex_cat_r[~matched_r_single]])
 
         ### exclude stars | magnitudes less than mag lim | outer | saturated ###
-        coords_merged_r = SkyCoord(merged_r['ALPHA_J2000'], merged_r['DELTA_J2000'], unit='deg')
-        bright_central_galaxies = (merged_r['CLASS_STAR'] < ab.class_star_lim) & (merged_r[ab.mag_sys] < ab.mag_lim) \
-                                  #& \
-                                  #(coords_merged_r.separation(ab.coords_cl_cen[k]).value < ab.rad_lim)
+        bright_central_galaxies = (merged_r['CLASS_STAR'] < ab.class_star_lim) & (merged_r[ab.mag_sys] < ab.stack_m1[k][2])
 
         num_process = 12
         num_gal_r = sum(bright_central_galaxies)
@@ -248,15 +276,15 @@ for k in range(0, len(ab.clusters)):
             fh.writelines("{:4}".format(j) + ' ' +  # NUMBER
                           "{:12.7f}".format(coords_r[i].ra.value) + ' ' +  # RA
                           "{:12.7f}".format(coords_r[i].dec.value) + ' ' +  # DEC
-                          "{:7.3f}".format(ref_r['A_WORLD'][i] * 3600) + ' ' +  # A_WORLD
-                          "{:7.3f}".format(ref_r['B_WORLD'][i] * 3600) + ' ' +  # B_WORLD
+                          "{:7.3f}".format(ref_r['A_IMAGE'][i] * 0.2637) + ' ' +  # A_WORLD
+                          "{:7.3f}".format(ref_r['B_IMAGE'][i] * 0.2637) + ' ' +  # B_WORLD
                           "{:4.2f}".format(ref_r['CLASS_STAR'][i]) + ' ' +  # CLASS_STAR
                           "{:7.3f}".format(umag) + ' ' +  # u-band 'MAG_AUTO'
                           "{:7.3f}".format(uerr) + ' ' +  # u-band 'MAGERR_AUTO'
                           "{:7.3f}".format(gmag) + ' ' +  # g-band 'MAG_AUTO'
                           "{:7.3f}".format(gerr) + ' ' +  # g-band 'MAGERR_AUTO'
-                          "{:7.3f}".format(ref_r['MAG_AUTO'][i]) + ' ' +  # r-band 'MAG_AUTO'
-                          "{:7.3f}".format(ref_r['MAGERR_AUTO'][i]) + ' ' +  # r-band 'MAGERR_AUTO'
+                          "{:7.3f}".format(ref_r[ab.mag_sys][i]) + ' ' +  # r-band 'MAG_AUTO'
+                          "{:7.3f}".format(ref_r[ab.magerr_sys][i]) + ' ' +  # r-band 'MAGERR_AUTO'
                           "{:2}".format(int(from_where_u)) + ' ' +  # u-band 'FROM_WHERE'
                           "{:2}".format(int(from_where_g)) + ' ' +  # g-band 'FROM_WHERE'
                           "{:2}".format(int(ref_r['FROM_WHERE'][i])) + '\n')  # r-band 'FROM_WHERE'
@@ -267,8 +295,8 @@ for k in range(0, len(ab.clusters)):
                                "color={} \n".format(
                 coords_r[i].ra.value,
                 coords_r[i].dec.value,
-                ref_r['A_WORLD'][i] * 3600 * ref_r['KRON_RADIUS'][i],
-                ref_r['B_WORLD'][i] * 3600 * ref_r['KRON_RADIUS'][i],
+                ref_r['A_IMAGE'][i] * 0.2637 * ref_r['KRON_RADIUS'][i],
+                ref_r['B_IMAGE'][i] * 0.2637 * ref_r['KRON_RADIUS'][i],
                 180 - ref_r['THETA_WORLD'][i],
                 j,
                 color))
@@ -276,24 +304,24 @@ for k in range(0, len(ab.clusters)):
             regFile2.writelines("j2000; ellipse({:12.7f}, {:12.7f}, {:7.3f}\", {:7.3f}\", {:7.3f})  \n".format(
                 coords_r[i].ra.value,
                 coords_r[i].dec.value,
-                ref_r['A_WORLD'][i] * 3600 * ref_r['KRON_RADIUS'][i],
-                ref_r['B_WORLD'][i] * 3600 * ref_r['KRON_RADIUS'][i],
+                ref_r['A_IMAGE'][i] * 0.2637 * ref_r['KRON_RADIUS'][i],
+                ref_r['B_IMAGE'][i] * 0.2637 * ref_r['KRON_RADIUS'][i],
                 180 - ref_r['THETA_WORLD'][i]))
 
-            if ref_r['MAG_AUTO'][i] < 16:
+            if ref_r[ab.mag_sys][i] < 16:
                 regFile16.writelines("j2000; ellipse({:12.7f}, {:12.7f}, {:7.3f}\", {:7.3f}\", {:7.3f}) \n".format(
                     coords_r[i].ra.value,
                     coords_r[i].dec.value,
-                    ref_r['A_WORLD'][i] * 3600 * ref_r['KRON_RADIUS'][i],
-                    ref_r['B_WORLD'][i] * 3600 * ref_r['KRON_RADIUS'][i],
+                    ref_r['A_IMAGE'][i] * 0.2637 * ref_r['KRON_RADIUS'][i],
+                    ref_r['B_IMAGE'][i] * 0.2637 * ref_r['KRON_RADIUS'][i],
                     180 - ref_r['THETA_WORLD'][i]))
 
-            if ref_r['MAG_AUTO'][i] < 18:
+            if ref_r[ab.mag_sys][i] < 18:
                 regFile18.writelines("j2000; ellipse({:12.7f}, {:12.7f}, {:7.3f}\", {:7.3f}\", {:7.3f}) \n".format(
                     coords_r[i].ra.value,
                     coords_r[i].dec.value,
-                    ref_r['A_WORLD'][i] * 3600 * ref_r['KRON_RADIUS'][i],
-                    ref_r['B_WORLD'][i] * 3600 * ref_r['KRON_RADIUS'][i],
+                    ref_r['A_IMAGE'][i] * 0.2637 * ref_r['KRON_RADIUS'][i],
+                    ref_r['B_IMAGE'][i] * 0.2637 * ref_r['KRON_RADIUS'][i],
                     180 - ref_r['THETA_WORLD'][i]))
 
             if i % 10000 == 0:
