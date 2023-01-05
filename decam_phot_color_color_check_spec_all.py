@@ -68,12 +68,9 @@ fig2, axs2 = plt.subplots(2, 1, tight_layout=True, figsize=(8, 12))
 # fig3, axs3 = plt.subplots(2, 4, tight_layout=True, figsize=(12, 6))
 fig3 = plt.figure(tight_layout=True, figsize=(14, 6))
 fig33, axs33 = plt.subplots(2, 3, tight_layout=True, figsize=(15, 10))
-fig4, axs4 = plt.subplots(2, 3, tight_layout=True, figsize=(15, 10))
-fig44, axs44 = plt.subplots(2, 3, tight_layout=True, figsize=(15, 10))
-# fig444, axs444 = plt.subplots(tight_layout=True, figsize=(10, 15))
 fig5, axs5 = plt.subplots(2, 3, tight_layout=True, figsize=(15, 10))
 # fig6, axs6 = plt.subplots(2, 4, tight_layout=True, figsize=(12, 6))
-fig444 = plt.figure(tight_layout=True, figsize=(10, 15))
+fig444 = plt.figure(tight_layout=True, figsize=(15, 10))
 fig6 = plt.figure(tight_layout=True, figsize=(12, 6))
 fig7 = plt.figure(tight_layout=True, figsize=(12, 6))
 fig77 = plt.figure(tight_layout=True, figsize=(9, 6))
@@ -85,7 +82,7 @@ fig12 = plt.figure(figsize=(6,6))
 
 gs3 = fig3.add_gridspec(2, 4, wspace=0.2, hspace=0)
 gs = fig6.add_gridspec(2, 4, wspace=0, hspace=0)
-gs444 = fig444.add_gridspec(5, 3, wspace=0, hspace=0)
+gs444 = fig444.add_gridspec(2, 3, wspace=0, hspace=0)
 gs7 = fig7.add_gridspec(2, 4, wspace=0, hspace=0)
 gs77 = fig77.add_gridspec(2, 3, wspace=0, hspace=0)
 axs9 = fig9.add_subplot()
@@ -109,14 +106,12 @@ for k in range(0, len(ab.clusters)):
 
         sex_cat = ascii.read(ab.work_dir+f'catalogue/{ab.clusters[k]}_merged_{ab.ver}.txt')
         vis_cat = ascii.read(ab.work_dir + f'sex/cat/DECam_merged_SEx_cat_{ab.clusters[k]}_Gal_ext_corrected_20rmag_psf.txt')
-        vis2_cat = ascii.read(ab.work_dir + f'sex/cat/DECam_merged_SEx_cat_{ab.clusters[k]}_Gal_ext_corrected_25rmag_dqm_edit.txt')
 
         sex_cat[ab.mag_sys+'_u'] -= ab.mw_ext[k][0]
         sex_cat[ab.mag_sys + '_g'] -= ab.mw_ext[k][1]
         sex_cat[ab.mag_sys + '_r'] -= ab.mw_ext[k][2]
 
         vis_cat['MAG_AUTO_r'] -= ab.mw_ext[k][2]
-        vis2_cat['MAG_AUTO_r'] -= ab.mw_ext[k][2]
 
         sex_cat[ab.mag_sys+'_u'] -= kcor.calc_kcor('u', ab.redshifts[k], 'u - r',
                                                     sex_cat[ab.mag_sys+'_u'] - sex_cat[ab.mag_sys+'_r'])
@@ -127,16 +122,12 @@ for k in range(0, len(ab.clusters)):
 
         vis_cat['MAG_AUTO_r'] -= kcor.calc_kcor('r', ab.redshifts[k], 'g - r',
                                                      vis_cat['MAG_AUTO_g'] - vis_cat['MAG_AUTO_r'])
-        vis2_cat['MAG_AUTO_r'] -= kcor.calc_kcor('r', ab.redshifts[k], 'g - r',
-                                                     vis2_cat['MAG_AUTO_g'] - vis2_cat['MAG_AUTO_r'])
 
         is_sex_volume = (sex_cat[ab.mag_sys + '_r'] - ab.distmod[k]) < -20
         is_vis_volume = (vis_cat['MAG_AUTO_r'] - ab.distmod[k]) < -20
-        is_vis2_volume = (vis2_cat['MAG_AUTO_r'] - ab.distmod[k]) < -20
 
         sex_cat = sex_cat[is_sex_volume]
         vis_cat = vis_cat[is_vis_volume]
-        vis2_cat = vis2_cat[is_vis2_volume]
 
         ### cross match to spec
         spec = ascii.read(ab.work_dir+f'spec/{ab.clusters[k]}_spec_ra_dec_z_zran_0.05_rran_1.5.txt')
@@ -200,15 +191,12 @@ for k in range(0, len(ab.clusters)):
 
         coords_cat = SkyCoord(sex_cat['ALPHA_J2000'], sex_cat['DELTA_J2000'], unit='deg')
         coords_vis = SkyCoord(vis_cat['ALPHA_J2000'], vis_cat['DELTA_J2000'], unit='deg')
-        coords_vis2 = SkyCoord(vis2_cat['ALPHA_J2000'], vis2_cat['DELTA_J2000'], unit='deg')
         coords_spec = SkyCoord(spec['col2'], spec['col3'], unit='deg')
         idx_spec, d2d, d3d = coords_cat.match_to_catalog_sky(coords_spec)
         idx_spec_vis, d2d_vis, d3d = coords_vis.match_to_catalog_sky(coords_spec)
-        idx_spec_vis2, d2d_vis2, d3d = coords_vis2.match_to_catalog_sky(coords_spec)
         matched_cat = (d2d.arcsec < ab.max_sep) & (sex_cat[ab.mag_sys+'_u'] < 900) & \
                       (sex_cat[ab.mag_sys+'_g'] < 900) & (sex_cat[ab.mag_sys+'_r'] < 900)
         matched_vis = (d2d_vis.arcsec < ab.max_sep)
-        matched_vis2 = (d2d_vis2.arcsec < ab.max_sep)
 
         if k == 3:
             coords_sha_str = []
@@ -245,26 +233,22 @@ for k in range(0, len(ab.clusters)):
             kpc_arcmin = Cosmo.kpc_proper_per_arcmin(ab.redshifts[k])
             sep = coords_cat[matched_cat].separation(ab.coords_cl[k])   # in degrees
             sep_vis = coords_vis[matched_vis].separation(ab.coords_cl[k])  # in degrees
-            sep_vis2 = coords_vis2[matched_vis2].separation(ab.coords_cl[k])  # in degrees
             sig_z = np.std(spec['col4'])
             xx = (sep * 6e1 * kpc_arcmin / 1e3 / ab.r200[k]).value
             xx_vis = (sep_vis * 6e1 * kpc_arcmin / 1e3 / ab.r200[k]).value
-            xx_vis2 = (sep_vis2 * 6e1 * kpc_arcmin / 1e3 / ab.r200[k]).value
 
             yy = np.abs(spec['col4'][idx_spec[matched_cat]] * const.c / 1e7 - fit_B) / fit_C
             yy_vis = np.abs(spec['col4'][idx_spec_vis[matched_vis]] * const.c / 1e7 - fit_B) / fit_C
-            yy_vis2 = np.abs(spec['col4'][idx_spec_vis2[matched_vis2]] * const.c / 1e7 - fit_B) / fit_C
 
             # yy = np.abs(spec['col4'][idx_spec[matched_cat]] - ab.redshifts[k])/sig_z/(1+ab.redshifts[k])
             # yy_vis = np.abs(spec['col4'][idx_spec_vis[matched_vis]] - ab.redshifts[k]) / sig_z / (1 + ab.redshifts[k])
             # yy_vis2 = np.abs(spec['col4'][idx_spec_vis2[matched_vis2]] - ab.redshifts[k]) / sig_z / (1 + ab.redshifts[k])
             in_vir = yy < (-1.5 / 1.2 * xx + 1.5)
             in_vir_vis = yy_vis < (-1.5 / 1.2 * xx_vis + 1.5)
-            in_vir_vis2 = yy_vis2 < (-1.5 / 1.2 * xx_vis2 + 1.5)
             # out_vir = yy > (-1.5 / 1.2 * xx + 1.5)
             dist = np.sqrt(yy ** 2 + xx ** 2)
-            dist_vis = np.sqrt(yy_vis ** 2 + xx_vis ** 2)
-            dist_vis2 = np.sqrt(yy_vis2 ** 2 + xx_vis2 ** 2)
+            # dist_vis = np.sqrt(yy_vis ** 2 + xx_vis ** 2)
+            dist_vis = xx_vis   # use 2D dist instead of 3D
 
             n12, bins12, patches12 = axs12.hist(dist, histtype='step', alpha=0.5, color=cols[k], linestyle=':')
             axs12.plot(bins12[:-1], n12/(bins12[:-1]**2), color=cols[k], label=f'{ab.clusters[k]}')
@@ -281,238 +265,128 @@ for k in range(0, len(ab.clusters)):
                 in_vir_sha = yy_sha < (-1.5 / 1.2 * xx_sha + 1.5)
                 dist_sha = np.sqrt(yy_sha ** 2 + xx_sha ** 2)
 
-            n_duho = [[0 for x in range(6)] for x in range(2)]  # number counts for Duho for 2 separate exam
-            d_duho = [[0 for x in range(3)] for x in range(2)]  # clustocentric distances for Duho for 2 separate exam
+            n_three = [0 for x in range(6)]  # number counts for three for in and out of I,PM,other
+            d_three = [0 for x in range(3)]  # clustocentric distances for three for I,PM,other
 
-            n_duho_mor = [[0 for x in range(3)] for x in range(2)]  # number counts for Duho for 2 separate exam
-
-            if k == 0:
-                row444 = 0
-                col444 = 0
-            elif k == 1:
-                row444 = 0
-                col444 = 2
-            elif k == 2:
-                row444 = 1
-                col444 = 1
-            elif k == 3:
-                row444 = 2
-                col444 = 0
-            else:
-                row444 = 4
-                col444 = 1
-
-            axs444 = fig444.add_subplot(gs444[row444, col444])
+            axs444 = fig444.add_subplot(gs444[row_spec, col_spec])
 
             # 1st visual inspection by Duho
             vis_cat = vis_cat['NUMBER'][matched_vis]
-            vis = ascii.read(ab.work_dir + f'vis/{ab.clusters[k]}_rs_or_spec_duho_new_rs.vis')
-            copy_dir = ab.work_dir + f'pics/{ab.clusters[k]}_for_all/'
-            with open(copy_dir + f'{ab.clusters[k]}_spec_m20_tmp.vis', 'w') as vis_for_all:
-                for i in range(len(vis_cat)):
-                    if vis_cat[i] in vis['col1']:
-                        # write .vis file for all
-                        vis_for_all.writelines(f'{vis_cat[i]}\n')
-                        # copy image cutouts for all
-                        fn_img_gala = ab.work_dir + f'pics/{ab.clusters[k]}_new_rs/{vis_cat[i]}'
-                        for img_file in img_files:
-                            if path.exists(fn_img_gala + img_file):
-                                shutil.copyfile(fn_img_gala + img_file, copy_dir + f'{vis_cat[i]}' + img_file)
-                        ind, = np.where(vis['col1'] == vis_cat[i])
-                        if vis['col2'][ind] == 0:   # Elliptical
-                            this_col = 'red'
-                            n_duho_mor[0][0] += 1
-                        elif vis['col2'][ind] == 1: # S0
-                            this_col = 'green'
-                            n_duho_mor[0][1] += 1
-                        elif vis['col2'][ind] == 2: # Spiral
-                            this_col = 'blue'
-                            n_duho_mor[0][2] += 1
-                        if vis['col3'][ind] & 2 ** 7 == 2 ** 7:   # interacting only
-                            d_duho[0][1] += dist_vis[i]
-                            this_alpha = 0.8
-                            this_marker = "*"
-                            this_size = 50
-                            if in_vir_vis[i]:
-                                n_duho[0][2] += 1
-                            else:
-                                n_duho[0][3] += 1
+            vis1 = ascii.read(ab.work_dir + f'vis/{ins[0]}/{ab.clusters[k]}.vis')
+            vis2 = ascii.read(ab.work_dir + f'vis/{ins[1]}/{ab.clusters[k]}.vis')
+            vis3 = ascii.read(ab.work_dir + f'vis/{ins[2]}/{ab.clusters[k]}.vis')
+            for i in range(len(vis_cat)):
+                if vis_cat[i] in vis2['col1']:
+                    ind, = np.where(vis2['col1'] == vis_cat[i])
+                    vote_I = 0
+                    vote_PM = 0
+                    ind_duho, = np.where(vis1['col1'] == vis_cat[i])
+                    # Duho's vote
+                    if vis1['col3'][ind_duho] & 2 ** 7 == 2 ** 7:   # interacting
+                        vote_I = vote_I + 1
+                    if vis1['col3'][ind_duho] & 2 ** 6 == 2 ** 6: # post-merger
+                        vote_PM = vote_PM + 1
+                    # Jake's vote
+                    if vis2['col3'][ind] & 2 ** 7 == 2 ** 7:
+                        vote_I = vote_I + 1
+                    if vis2['col3'][ind] & 2 ** 6 == 2 ** 6:
+                        vote_PM = vote_PM + 1
+                    # Garreth's vote
+                    if vis3['col3'][ind] & 2 ** 7 == 2 ** 7:
+                        vote_I = vote_I + 1
+                    if vis3['col3'][ind] & 2 ** 6 == 2 ** 6:
+                        vote_PM = vote_PM + 1
 
-                        if vis['col3'][ind] & 2 ** 6 == 2 ** 6:   # post-merger only
-                            d_duho[0][2] += dist_vis[i]
-                            this_alpha = 0.5
-                            this_marker = "P"
-                            this_size = 50
-                            if in_vir_vis[i]:
-                                n_duho[0][4] += 1
-                            else:
-                                n_duho[0][5] += 1
-                        if vis['col3'][ind] & 2 ** 6 + 2 ** 7 == 0:   # neither
-                            d_duho[0][0] += dist_vis[i]
-                            this_alpha = 0.1
-                            this_marker = "."
-                            this_size = 30
-                            if in_vir_vis[i]:
-                                n_duho[0][0] += 1
-                            else:
-                                n_duho[0][1] += 1
-
-                        axs4[row_spec][col_spec].scatter(xx_vis[i], yy_vis[i], alpha=this_alpha, c=this_col, s=this_size, marker=this_marker)
-
-                        axs444.scatter(xx_vis[i], yy_vis[i], alpha=this_alpha, c=this_col, s=this_size,
-                                                         marker=this_marker)
-            axs4[row_spec][col_spec].plot([0, 1.2], [1.5, 0], linestyle='--')
-            axs4[row_spec][col_spec].set_title(ab.clusters[k])
-            axs4[row_spec][col_spec].set_xlim([0, 3])
-            axs4[row_spec][col_spec].set_ylim([0, 3])
-            axs4[row_spec][col_spec].set_xlabel('r/R200')
-            axs4[row_spec][col_spec].set_ylabel(r'$\left| \Delta v \right|$/$\sigma$')
-
-            axs444.plot([0, 1.2], [1.5, 0], linestyle='--')
-            axs444.annotate(f'{ab.clusters[k]}_A1', xy=(0.45, 0.9), xycoords='axes fraction', fontsize=20)
-            if row444 < 4:
-                plt.setp(axs444.get_xticklabels(), visible=False)
-            else:
-                plt.setp(axs444.get_xticklabels(), fontsize=15)
-                if col444:
-                    axs444.set_xticks([0.5, 1.0, 1.5, 2.0, 2.5, 3.0])
-                axs444.set_xlabel(r'R/R$_{200}$', fontsize=20)
-
-            if col444:
-                plt.setp(axs444.get_yticklabels(), visible=False)
-            else:
-                plt.setp(axs444.get_yticklabels(), fontsize=15)
-                if row444:
-                    axs444.set_yticks([0.0, 0.5, 1.0, 1.5, 2.0, 2.5])
-                axs444.set_ylabel(r'$\left| \Delta v \right|$/$\sigma$', fontsize=20)
-            axs444.set_xlim([0, 3])
-            axs444.set_ylim([0, 3])
-            axs444.tick_params(direction='in', top=True, right=True)
-
-            if k == 0:
-                axs444.text(2.7, 1.5, 'E', color='red', fontsize=20)
-                axs444.text(2.55, 1.2, 'S0', color='green', fontsize=20)
-                axs444.text(2.1, 0.9, 'Spiral', color='blue', fontsize=20)
-                axs444.legend(handles=[star, plus], loc='lower right', fontsize='large')
-
-
-            if k == 1:
-                row444 = 1
-                col444 = 0
-            else:
-                col444 += 1
-
-            axs444 = fig444.add_subplot(gs444[row444, col444])
-
-            # 2nd Visual Inspection by Duho
-            vis2_cat = vis2_cat['NUMBER'][matched_vis2]
-            vis2 = ascii.read(ab.work_dir + f'vis/{ab.clusters[k]}_rs_or_spec_duho_gala_back.vis')
-            for i in range(len(vis2_cat)):
-                if vis2_cat[i] in vis2['col1']:
-                    ind, = np.where(vis2['col1'] == vis2_cat[i])
-                    if vis2['col2'][ind] == 0:   # Elliptical
-                        this_col = 'red'
-                        n_duho_mor[1][0] += 1
-                    elif vis2['col2'][ind] == 1: # S0
-                        this_col = 'green'
-                        n_duho_mor[1][1] += 1
-                    elif vis2['col2'][ind] == 2: # Spiral
-                        this_col = 'blue'
-                        n_duho_mor[1][2] += 1
-                    if vis2['col3'][ind] & 2 ** 7 == 2 ** 7:           # interacting only
-                        d_duho[1][1] += dist_vis2[i]
+                    if vote_I >= 2:       # 2 or more Interacting
+                        d_three[1] += dist_vis[i]
                         this_alpha = 0.8
                         this_marker = "*"
                         this_size = 50
-                        if in_vir_vis2[i]:
-                            n_duho[1][2] += 1
+                        this_col = 'red'
+                        if in_vir_vis[i]:
+                            n_three[2] += 1
                         else:
-                            n_duho[1][3] += 1
-                    if vis2['col3'][ind] & 2 ** 6 == 2 ** 6:  # post-merger only
-                        d_duho[1][2] += dist_vis2[i]
+                            n_three[3] += 1
+                    elif vote_PM >= 2:       # 2 or more PM
+                        d_three[2] += dist_vis[i]
                         this_alpha = 0.5
                         this_marker = "P"
                         this_size = 50
-                        if in_vir_vis2[i]:
-                            n_duho[1][4] += 1
+                        this_col = 'orange'
+                        if in_vir_vis[i]:
+                            n_three[4] += 1
                         else:
-                            n_duho[1][5] += 1
-                    if vis2['col3'][ind] & 2 ** 6 + 2 ** 7 == 0:  # neither
-                        d_duho[1][0] += dist_vis2[i]
+                            n_three[5] += 1
+                    else:
+                        d_three[0] += dist_vis[i]
                         this_alpha = 0.1
                         this_marker = "."
                         this_size = 30
-                        if in_vir_vis2[i]:
-                            n_duho[1][0] += 1
+                        this_col = 'grey'
+                        if in_vir_vis[i]:
+                            n_three[0] += 1
                         else:
-                            n_duho[1][1] += 1
+                            n_three[1] += 1
 
-                    axs44[row_spec][col_spec].scatter(xx_vis2[i], yy_vis2[i], alpha=this_alpha, c=this_col, s=this_size,
+                    axs444.scatter(xx_vis[i], yy_vis[i], alpha=this_alpha, c=this_col, s=this_size,
                                                      marker=this_marker)
-                    axs444.scatter(xx_vis2[i], yy_vis2[i], alpha=this_alpha, c=this_col, s=this_size,
-                                                      marker=this_marker)
-            axs44[row_spec][col_spec].plot([0, 1.2], [1.5, 0], linestyle='--')
-            axs44[row_spec][col_spec].set_title(ab.clusters[k])
-            axs44[row_spec][col_spec].set_xlim([0, 3])
-            axs44[row_spec][col_spec].set_ylim([0, 3])
-            axs44[row_spec][col_spec].set_xlabel('r/R200')
-            axs44[row_spec][col_spec].set_ylabel(r'$\Delta$z/(1+z)$\sigma_z$')
 
             axs444.plot([0, 1.2], [1.5, 0], linestyle='--')
-            axs444.annotate(f'{ab.clusters[k]}_A2', xy=(0.45, 0.9), xycoords='axes fraction', fontsize=20)
-            if row444 < 4:
+            axs444.annotate(f'{ab.clusters[k]}', xy=(0.7, 0.9), xycoords='axes fraction', fontsize=30)
+
+            if row_spec == 0 and col_spec < 2:
                 plt.setp(axs444.get_xticklabels(), visible=False)
             else:
                 plt.setp(axs444.get_xticklabels(), fontsize=15)
-                if col444:
+                if col_spec == 2:
                     axs444.set_xticks([0.5, 1.0, 1.5, 2.0, 2.5, 3.0])
                 axs444.set_xlabel(r'R/R$_{200}$', fontsize=20)
-            if col444:
+
+            if col_spec:
                 plt.setp(axs444.get_yticklabels(), visible=False)
             else:
-                if row444:
-                    axs444.set_yticks([0.0, 0.5, 1.0, 1.5, 2.0, 2.5])
                 plt.setp(axs444.get_yticklabels(), fontsize=15)
+                if row_spec:
+                    axs444.set_yticks([0.0, 0.5, 1.0, 1.5, 2.0, 2.5])
                 axs444.set_ylabel(r'$\left| \Delta v \right|$/$\sigma$', fontsize=20)
             axs444.set_xlim([0, 3])
             axs444.set_ylim([0, 3])
             axs444.tick_params(direction='in', top=True, right=True)
 
-            for i in range(0, 2):
-                num_tot_in = n_duho[i][0] + n_duho[i][2] + n_duho[i][4]
-                num_tot_out = n_duho[i][1] + n_duho[i][3] + n_duho[i][5]
+            num_tot_in = n_three[0] + n_three[2] + n_three[4]
+            num_tot_out = n_three[1] + n_three[3] + n_three[5]
 
-                f_int_in = n_duho[i][2] / num_tot_in * 100
-                f_int_out = n_duho[i][3] / num_tot_out * 100
-                f_pm_in = n_duho[i][4] / num_tot_in * 100
-                f_pm_out = n_duho[i][5] / num_tot_out * 100
-                f_eith_in = (num_tot_in - n_duho[i][0]) / num_tot_in * 100
-                f_eith_out = (num_tot_out - n_duho[i][1]) / num_tot_out * 100
+            f_int_in = n_three[2] / num_tot_in * 100
+            f_int_out = n_three[3] / num_tot_out * 100
+            f_pm_in = n_three[4] / num_tot_in * 100
+            f_pm_out = n_three[5] / num_tot_out * 100
+            f_eith_in = (num_tot_in - n_three[0]) / num_tot_in * 100
+            f_eith_out = (num_tot_out - n_three[1]) / num_tot_out * 100
 
-                d_x = []
-                d_y = []
-                f_y = []
+            d_x = []
+            d_y = []
+            f_y = []
 
-                d_tot = (d_duho[i][0] + d_duho[i][1] + d_duho[i][2]) / (
-                                n_duho[i][0] + n_duho[i][1] + n_duho[i][3] + n_duho[i][4] + n_duho[i][4] + n_duho[i][5])
+            d_tot = sum(d_three) / sum(n_three)
 
-                if (n_duho[i][2] + n_duho[i][3]):
-                    d_int = d_duho[i][1] / (n_duho[i][2] + n_duho[i][3])
-                    d_x.append(1)
-                    d_y.append(d_int / d_tot)
-                    d_int_tot.append(d_int / d_tot)
-                    f_y.append(f_int_out - f_int_in)
-                    f_int_tot.append(f_int_out - f_int_in)
+            if (n_three[2] + n_three[3]):
+                d_int = d_three[1] / (n_three[2] + n_three[3])
+                d_x.append(1)
+                d_y.append(d_int / d_tot)
+                d_int_tot.append(d_int / d_tot)
+                f_y.append(f_int_out - f_int_in)
+                f_int_tot.append(f_int_out - f_int_in)
 
-                if (n_duho[i][4] + n_duho[i][5]):
-                    d_pm = d_duho[i][2] / (n_duho[i][4] + n_duho[i][5])
-                    d_x.append(2)
-                    d_y.append(d_pm / d_tot)
-                    d_pm_tot.append(d_pm / d_tot)
-                    f_y.append(f_pm_out - f_pm_in)
-                    f_pm_tot.append(f_pm_out - f_pm_in)
+            if (n_three[4] + n_three[5]):
+                d_pm = d_three[2] / (n_three[4] + n_three[5])
+                d_x.append(2)
+                d_y.append(d_pm / d_tot)
+                d_pm_tot.append(d_pm / d_tot)
+                f_y.append(f_pm_out - f_pm_in)
+                f_pm_tot.append(f_pm_out - f_pm_in)
 
-                d_eith = (d_duho[i][1] + d_duho[i][2]) / (n_duho[i][2] + n_duho[i][3] + n_duho[i][4] + n_duho[i][5])
+            if sum(n_three[2:]):
+                d_eith = sum(d_three[1:]) / sum(n_three[2:])
                 d_x.append(3)
                 d_y.append(d_eith / d_tot)
                 d_eith_tot.append(d_eith / d_tot)
@@ -524,162 +398,9 @@ for k in range(0, len(ab.clusters)):
                 axs10.scatter(d_x, f_y, alpha=0.5, s=ab.m200[k]*4, marker="o", label=f'{ab.clusters[k]}_A{i+1}')
                 axs11.scatter(d_x, d_y, alpha=0.5, s=ab.m200[k]*4, marker="o", label=f'{ab.clusters[k]}_A{i+1}')
 
-                if i == 0:
-                    axs4[row_spec, col_spec].annotate(["{0:0.2f}".format(j) for j in f_y], xy=(0.1, 0.9), xycoords='axes fraction', fontsize=20)
-                    axs4[row_spec, col_spec].annotate(["{0:0.2f}".format(j) for j in d_y], xy=(0.1, 0.8), xycoords='axes fraction', fontsize=20)
-                else:
-                    axs44[row_spec, col_spec].annotate(["{0:0.2f}".format(j) for j in f_y], xy=(0.1, 0.9), xycoords='axes fraction', fontsize=20)
-                    axs44[row_spec, col_spec].annotate(["{0:0.2f}".format(j) for j in d_y], xy=(0.1, 0.8), xycoords='axes fraction', fontsize=20)
-
                 print(f'{ab.clusters[k]} {i}th N_sample:{num_tot_in + num_tot_out}, N_in_vir:{num_tot_in}, '
-                      f'N_E:{n_duho_mor[i][0]}, N_S0:{n_duho_mor[i][1]}, N_Spr:{n_duho_mor[i][2]}, '
-                      f'N_I:{n_duho[i][2]+n_duho[i][3]}, N_I_in_vir:{n_duho[i][2]}, '
-                      f'N_PM:{n_duho[i][4] + n_duho[i][5]}, N_PM_in_vir:{n_duho[i][4]}')
-
-            if k == 3:
-                id_cat = sha['col1'][idx_sha[matched_cat2sha]]
-                vis_all = pd.read_excel(ab.work_dir + f'vis/A3558_all.xlsx')
-                vis_df = pd.DataFrame(data=vis_all)
-
-                n_all = [[0 for x in range(6)] for x in range(5)]   # number counts for 5 examiners
-                d_all = [[0 for x in range(3)] for x in range(5)]  # number counts for 5 examiners
-
-                n_all_mor = [[0 for x in range(3)] for x in range(5)]  # number counts for 5 examiners
-
-                axs_all = np.empty(5, dtype=object)
-
-                for ii in range(5):
-                    add_row = ii // 4 if ii else -1
-                    row444 = 3 + add_row
-                    col444 = (ii % 4) - 1 if ii else 2
-                    col444 = col444 if col444 >= 0 else 0
-
-                    axs444 = fig444.add_subplot(gs444[row444, col444])
-
-                    axs444.plot([0, 1.2], [1.5, 0], linestyle='--')
-                    axs444.annotate(f'{ab.clusters[k]}_{classifier[ii]}', xy=(0.45, 0.9), xycoords='axes fraction', fontsize=20)
-                    if row444 < 4:
-                        plt.setp(axs444.get_xticklabels(), visible=False)
-                    else:
-                        plt.setp(axs444.get_xticklabels(), fontsize=15)
-                        if col444:
-                            axs444.set_xticks([0.5, 1.0, 1.5, 2.0, 2.5, 3.0])
-                        axs444.set_xlabel(r'R/R$_{200}$', fontsize=20)
-                    if col444:
-                        plt.setp(axs444.get_yticklabels(), visible=False)
-                    else:
-                        if row444:
-                            axs444.set_yticks([0.0, 0.5, 1.0, 1.5, 2.0, 2.5])
-                        plt.setp(axs444.get_yticklabels(), fontsize=15)
-                        axs444.set_ylabel(r'$\left| \Delta v \right|$/$\sigma$', fontsize=20)
-                    axs444.set_xlim([0, 3])
-                    axs444.set_ylim([0, 3])
-                    axs444.tick_params(direction='in', top=True, right=True)
-
-                    axs_all[ii] = axs444
-
-                for ii in range(len(id_cat)):
-                    vis_all = vis_df.loc[vis_df['ID'] == id_cat[ii]]
-                    if len(vis_all):
-                        for j in range(5):      # for 5 examiner
-                            if (vis_all.iloc[:, 2+j].values == 'E'):  # Elliptical
-                                this_col = 'red'
-                                n_all_mor[j][0] += 1
-                            elif (vis_all.iloc[:, 2+j].values == 'S0'):  # S0
-                                this_col = 'green'
-                                n_all_mor[j][1] += 1
-                            elif (vis_all.iloc[:, 2+j].values == 'Spr'):  # Spiral
-                                this_col = 'blue'
-                                n_all_mor[j][2] += 1
-
-                            if (vis_all.iloc[:, 11+j].values == 'int') | (vis_all.iloc[:, 11+j].values == 'bridge'):  # interacting
-                                d_all[j][1] += dist_sha[ii]
-                                this_alpha = 0.8
-                                this_marker = "*"
-                                this_size = 50
-                                if in_vir_sha[ii]:
-                                    n_all[j][2] += 1
-                                else:
-                                    n_all[j][3] += 1
-                            elif (vis_all.iloc[:, 11+j].values == 'sheet') | (vis_all.iloc[:, 11+j].values == 'fan'):  # post-merger
-                            # elif (vis_all.iloc[:, 11+j].values == 'sheet') | (vis_all.iloc[:, 11+j].values == 'asym') | \
-                            #         (vis_all.iloc[:, 11+j].values == 'fan'):  # post-merger
-                                d_all[j][2] += dist_sha[ii]
-                                this_alpha = 0.5
-                                this_marker = "P"
-                                this_size = 50
-                                if in_vir_sha[ii]:
-                                    n_all[j][4] += 1
-                                else:
-                                    n_all[j][5] += 1
-                            else:
-                                d_all[j][0] += dist_sha[ii]
-                                this_alpha = 0.1
-                                this_marker = "."
-                                this_size = 30
-                                if in_vir_sha[ii]:
-                                    n_all[j][0] += 1
-                                else:
-                                    n_all[j][1] += 1
-                            #
-                            # add_row = j // 4 if j else -1
-                            # col444 = (j % 4) - 1 if j else 2
-                            # col444 = col444 if col444 >= 0 else 0
-
-                            # axs444 = plt.subplot(gs444[3 + add_row, col444])
-                            axs_all[j].scatter(xx_sha[ii], yy_sha[ii], alpha=this_alpha, c=this_col, s=this_size,
-                                           marker=this_marker)
-
-                f_int_in = [x / y * 100 for x, y in zip([xx[2] for xx in n_all], [sum(xx[yy] for yy in [0, 2, 4]) for xx in n_all])]
-                f_int_out = [x / y * 100 for x, y in zip([xx[3] for xx in n_all], [sum(xx[yy] for yy in [1, 3, 5]) for xx in n_all])]
-
-                f_pm_in = [x / y * 100 for x, y in zip([xx[4] for xx in n_all], [sum(xx[yy] for yy in [0, 2, 4]) for xx in n_all])]
-                f_pm_out = [x / y * 100 for x, y in zip([xx[5] for xx in n_all], [sum(xx[yy] for yy in [1, 3, 5]) for xx in n_all])]
-
-                f_eith_in = [x / y * 100 for x, y in
-                           zip([sum(xx[yy] for yy in [2, 4]) for xx in n_all], [sum(xx[yy] for yy in [0, 2, 4]) for xx in n_all])]
-                f_eith_out = [x / y * 100 for x, y in
-                            zip([sum(xx[yy] for yy in [3, 5]) for xx in n_all], [sum(xx[yy] for yy in [1, 3, 5]) for xx in n_all])]
-
-                for ii in range(5):
-                    d_mean = (d_all[ii][0] + d_all[ii][1] + d_all[ii][2])  / (n_all[ii][0] + n_all[ii][1] + n_all[ii][2] + \
-                                                                          n_all[ii][3] + n_all[ii][4] + n_all[ii][5])
-                    d_int = d_all[ii][1]  / (n_all[ii][2] + n_all[ii][3])
-                    d_not_int = (d_all[ii][0] + d_all[ii][2])  / (n_all[ii][0] + n_all[ii][1] + n_all[ii][4] + n_all[ii][5])
-                    d_pm = d_all[ii][2] / (n_all[ii][4] + n_all[ii][5])
-                    d_not_pm = (d_all[ii][0] + d_all[ii][1]) / (n_all[ii][0] + n_all[ii][1] + n_all[ii][2] + n_all[ii][3])
-                    d_eith = (d_all[ii][1] + d_all[ii][2]) / (n_all[ii][2] + n_all[ii][3] + n_all[ii][4] + n_all[ii][5])
-                    d_neith = d_all[ii][0] / (n_all[ii][0] + n_all[ii][1])
-
-                    d_int_tot.append(d_int / d_not_int)
-                    f_int_tot.append(f_int_out[ii] - f_int_in[ii])
-
-                    # axs10.scatter([1, 2, 3], [f_int_out[ii] - f_int_in[ii], f_pm_out[ii] - f_pm_in[ii], f_eith_out[ii] - f_eith_in[ii]],
-                    #           alpha=0.5, s=ab.m200[k]*2)
-                    # axs11.scatter([1, 2, 3], [d_int / d_mean, d_pm / d_mean, d_eith / d_mean],
-                    #               alpha=0.5, s=ab.m200[k] * 2)
-                    axs10.scatter([1, 2, 3], [f_int_out[ii] - f_int_in[ii], f_pm_out[ii] - f_pm_in[ii], f_eith_out[ii] - f_eith_in[ii]],
-                              alpha=0.5, s=ab.m200[k]*4, marker="^", label=f'{ab.clusters[k]}_{classifier[ii]}')
-                    axs11.scatter([1, 2, 3], [d_int / d_mean, d_pm / d_mean, d_eith / d_mean],
-                                  alpha=0.5, s=ab.m200[k]*4, marker="^", label=f'{ab.clusters[k]}_{classifier[ii]}')
-
-                    print(f'{ab.clusters[k]} {ii}th N_sample:{sum(n_all[ii])}, '
-                          f'N_in_vir:{sum(operator.itemgetter(0, 2, 4)(n_all[ii]))}, '
-                          f'N_E:{n_all_mor[ii][0]}, N_S0:{n_all_mor[ii][1]}, N_Spr:{n_all_mor[ii][2]}, '
-                          f'N_I:{sum(operator.itemgetter(2, 3)(n_all[ii]))}, '
-                          f'N_I_in_vir:{operator.itemgetter(2)(n_all[ii])}, ' 
-                          f'N_PM:{sum(operator.itemgetter(4, 5)(n_all[ii]))}, '
-                          f'N_PM_in_vir:{operator.itemgetter(4)(n_all[ii])}')
-
-                # br1 = np.arange(5)
-                # br2 = [x + barWidth for x in br1]
-                # br3 = [x + barWidth for x in br2]
-                # br4 = [x + barWidth for x in br3]
-                #
-                # axs10[0].barh(br1, f_int_in, height = barWidth, label='int (in)')
-                # axs10[1].barh(br2, f_int_out, height = barWidth, label='int (out)')
-                # axs10[0].barh(br3, f_pm_in, height = barWidth, label='pm (in)')
-                # axs10[1].barh(br4, f_pm_out, height = barWidth, label='pm (out)')
+                      f'N_I:{n_three[2]+n_three[3]}, N_I_in_vir:{n_three[2]}, '
+                      f'N_PM:{n_three[4] + n_three[5]}, N_PM_in_vir:{n_three[4]}')
 
 
         row = int(k / 4)
@@ -1028,16 +749,6 @@ axs2[0].legend(loc='lower left', fontsize='large')
 # blue = mlines.Line2D([], [], color='blue', marker='o', linestyle='None',
 #                           markersize=10, label='Spiral')
 
-axs4[1][2].text(0.1, 0.9, 'E', color='red', fontsize=20)
-axs4[1][2].text(0.1, 0.8, 'S0', color='green', fontsize=20)
-axs4[1][2].text(0.1, 0.7, 'Spiral', color='blue', fontsize=20)
-axs4[1][2].legend(handles=[star, plus], loc='lower left', fontsize='large')
-
-axs44[1][2].text(0.1, 0.9, 'E', color='red', fontsize=20)
-axs44[1][2].text(0.1, 0.8, 'S0', color='green', fontsize=20)
-axs44[1][2].text(0.1, 0.7, 'Spiral', color='blue', fontsize=20)
-axs44[1][2].legend(handles=[star, plus], loc='lower left', fontsize='large')
-
 axs10.set_ylabel(r'% (out vir) $-$ % (in vir)', fontsize=20)
 axs11.set_ylabel(r'd$_{norm}$', fontsize=20)
 # plt.setp(axs10, xticks=[1, 2, 3], xticklabels=['Interacting(I)', 'Post-merger(PM)', 'I+PM'])
@@ -1083,8 +794,6 @@ fig.savefig(ab.plot_dir + f'CMD_merged_spec_{ab.ver}_psf.png')
 fig2.savefig(ab.plot_dir + f'CMD_allinone_spec_{ab.ver}_psf.png')
 fig3.savefig(ab.plot_dir + f'hist_spec_{ab.ver}_psf_each_app_cut.png')
 fig33.savefig(ab.plot_dir + f'in_red_sequence_completeness.png')
-fig4.savefig(ab.plot_dir + f'pps_spec_{ab.ver}_duho1.png')
-fig44.savefig(ab.plot_dir + f'pps_spec_{ab.ver}_duho2.png')
 fig444.savefig(ab.plot_dir + f'pps_spec_{ab.ver}_all.png')
 fig5.savefig(ab.plot_dir + f'vel_hist_spec_{ab.ver}_psf.png')
 fig6.savefig(ab.plot_dir + f'CMD_each_{ab.ver}_no_err_fit_each_til_001_1sig_rej_psf_proc_app_cut.png')
@@ -1099,11 +808,11 @@ fig12.savefig(ab.plot_dir + f'radial_number.png')
 plt.close(fig)
 plt.close(fig2)
 plt.close(fig3)
-plt.close(fig4)
 plt.close(fig5)
 plt.close(fig6)
 plt.close(fig7)
 plt.close(fig77)
 plt.close(fig8)
 plt.close(fig10)
+
 

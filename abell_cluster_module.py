@@ -3,21 +3,21 @@ from astropy.coordinates import SkyCoord
 from astropy import units as u
 from astropy.cosmology import Planck18
 
-ver = 'spec'
-class_star_lim = 0.5
-max_sep = 1.0   # matching radius limit among each individual exposures
-mag_sys = 'MAG_BEST'
-magerr_sys = 'MAGERR_BEST'
-mag_lim = 30
-rad_lim = 2.0 # only include detection inside [degree]
-
-# ver = 'm1_psf'
+# ver = 'spec'
 # class_star_lim = 0.5
 # max_sep = 1.0   # matching radius limit among each individual exposures
 # mag_sys = 'MAG_BEST'
 # magerr_sys = 'MAGERR_BEST'
 # mag_lim = 30
 # rad_lim = 2.0 # only include detection inside [degree]
+
+ver = 'm1_psf'
+class_star_lim = 0.5
+max_sep = 1.0   # matching radius limit among each individual exposures
+mag_sys = 'MAG_BEST'
+magerr_sys = 'MAGERR_BEST'
+mag_lim = 30
+rad_lim = 2.0 # only include detection inside [degree]
 
 # ver = '30rmag_psf'
 # class_star_lim = 0.5
