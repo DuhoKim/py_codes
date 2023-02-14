@@ -7,6 +7,8 @@ from reproject import reproject_interp
 from astropy.visualization.wcsaxes import SphericalCircle, Quadrangle
 from astropy import units as u
 import abell_cluster_module as ab
+import importlib
+importlib.reload(ab)
 from astropy.cosmology import Planck18 as Cosmo
 import img_scale
 # from matplotlib.patches import Rectangle
@@ -23,25 +25,30 @@ for k in range(0, 1):
     with fits.open(ab.work_dir + 'fits/stacked/' + ab.clusters[k] + '_rsi.fits') as hdu_r, \
             fits.open(ab.work_dir + 'fits/rosat/' + ab.clusters[k] + '.fits') as hdu_x:
     # with fits.open(ab.work_dir + 'fits/rosat/' + ab.clusters[k] + '.fits') as hdu_x:
-        sky_r = mm.get_gala_sky(ab.clusters[k], 'r', hdu_r, ab.coords_cl_cen[k])
+    #     sky_r = mm.get_gala_sky(ab.clusters[k], 'r', hdu_r, ab.coords_cl_cen[k])
 
-        fig = plt.figure(figsize=(20, 20))
-        wcs_out, shape_out = find_optimal_celestial_wcs(hdu_r[5])  # has only CompImageHDU files
+        fig = plt.figure(figsize=(10, 10))
+        wcs_out, shape_out = find_optimal_celestial_wcs(hdu_r[1:9])  # has only CompImageHDU files
         wcs_x, shape_x = find_optimal_celestial_wcs(hdu_x)  # has only CompImageHDU files
 
-        # array, footprint = reproject_and_coadd(hdu_r[5],
-        #                                        wcs_out,
-        #                                        shape_out=shape_out,
-        #                                        reproject_function=reproject_interp)
+        array_r, footprint = reproject_and_coadd(hdu_r[1:9],
+                                               wcs_out,
+                                               shape_out=shape_out,
+                                               reproject_function=reproject_interp)
+        mm.print_time()
+        array, footprint = reproject_interp(hdu_x, hdu_r[5].header)
 
         ax = fig.add_subplot(projection=wcs_out)
+        # ax = fig.add_subplot()
 
         # plt.imshow(mm.jarrett(array-sky_r, np.nanstd(array), 5), cmap='gray_r')
-        stretch_r = img_scale.sqrt(hdu_r[5][0:10,0:10], scale_min=0, scale_max=100)
+
+        stretch_r = img_scale.sqrt(array_r - np.nanmedian(array_r), scale_min=0, scale_max=100)
+        # stretch_r = img_scale.sqrt(hdu_r[5].data - sky_r, scale_min=0, scale_max=100)
         # plt.imshow(stretch_r, origin='lower', cmap='PuOr')
-        plt.imshow(stretch_r, origin='lower', cmap='binary')
-        plt.xlabel('R.A.', fontsize=30)
-        plt.ylabel('Decl.', fontsize=30)
+        ax.imshow(stretch_r, origin='lower', cmap='binary')
+        ax.set_xlabel('R.A.', fontsize=30)
+        ax.set_ylabel('Decl.', fontsize=30)
         ax.tick_params(axis='both', which='major', labelsize=25)
         # ax.tick_params(axis='both', which='major', labelsize=20)
 
@@ -49,13 +56,13 @@ for k in range(0, 1):
 
 
         data = hdu_x[0].data
-        # smoothed = nd.zoom(data, 10)
+        smoothed = nd.zoom(data, 10)
         # ax.contour(smoothed, projection=wcs_out)
 
         sigma = 0.7  # this depends on how noisy your data is, play with it!
 
-        data = gaussian_filter(data, sigma)
-        ax.contour(data)
+        data = gaussian_filter(array, sigma)
+        ax.contour(data, projection=wcs_out)
 
 
 
@@ -71,11 +78,13 @@ for k in range(0, 1):
                             linestyle='--',
                             transform=ax.get_transform('fk5'),
                             linewidth=3)
-        ax.add_patch(c)
+        # ax.add_patch(c)
 
         # h2.text(0.1, 0.9, f'Sersic index = {ser_idx}', color='white', transform=h2.transAxes)
 
         # plt.plot([1000, 1000 + pixel_Mpc.value], [1000, 1000], linewidth=3, color='purple')
         # plt.text(1000, 1500, f'1Mpc at z={z:5.3f}', fontsize=25)
 
-        plt.savefig(ab.work_dir + 'plot/' + ab.clusters[k] + '_stack_mosaic_sqrt_binary_rosat.pdf')
+        plt.savefig(ab.work_dir + 'plot/' + ab.clusters[k] + '_stack_mosaic_sqrt_binary_rosat2.pdf')
+
+    mm.print_time()

@@ -50,6 +50,7 @@ ins = ['Duho', 'Jake', 'Garreth']
 cols = ['black', 'red', 'purple', 'darkorange', 'olive', 'darkgreen', 'teal']
 img_files = ['_rgb_jar_3.png', '_rgb_sqrt_0_1.png', '_rgb_sqrt_0_01_big.png', '_rgb_sqrt_0_001_big.png', '_gala.png']
 
+
 ### for phase space daigram
 classifier = ['B', 'C', 'D', 'E', 'F']
 star = mlines.Line2D([], [], color='grey', marker='*', linestyle='None',
@@ -61,7 +62,7 @@ plus = mlines.Line2D([], [], color='grey', marker='P', linestyle='None',
 params = ['MEAN_MAG_DIFF', 'DATE', 'EXP_TIME', 'SEEING', 'AIRMASS', 'TOTAL_MATCH_NUM']
 num_of_param = len(params)
 
-am_cat = pd.read_csv('/Users/duhokim/work/abell/sex/cat/airmass.csv')
+am_cat = pd.read_csv(ab.work_dir+f'sex/cat/airmass.csv')
 
 fig, axs = plt.subplots(2, len(ab.clusters), tight_layout=True, figsize=(20, 6))
 fig2, axs2 = plt.subplots(2, 1, tight_layout=True, figsize=(8, 12))
@@ -96,7 +97,7 @@ f_eith_tot = []
 d_eith_tot = []
 
 for k in range(0, len(ab.clusters)):
-# for k in range(0, 1):
+# for k in range(0, 3):
 #     if (k == 4) | (k == 5):
 #         continue
     with open(ab.work_dir+f'spec/{ab.clusters[k]}_rs_each_{ab.ver}.radec', 'w') as radec, \
@@ -146,6 +147,16 @@ for k in range(0, len(ab.clusters)):
             # best fit of data
             (mu, sigma) = norm.fit(spec['col4'] * const.c / 1e7)
 
+            # fit the A3562 seperately
+            if k == 3:
+                r_spec = ascii.read(ab.work_dir + f'spec/{ab.clusters[k]}_spec_ra_dec_z.txt')
+                r_cat = ascii.read(ab.work_dir + f'spec/{ab.clusters[k]}_class_uncer.csv', format='csv')
+                # fit the real A3558 first
+                is_3558 = (r_cat['classification'] == 2)
+                is_3562 = (r_cat['classification'] == 5)
+                (mu58, sigma58) = norm.fit(r_spec['col4'][is_3558] * const.c / 1e7)
+                (mu62, sigma62) = norm.fit(r_spec['col4'][is_3562] * const.c / 1e7)
+
             # the histogram of the data
             vel = spec['col4'] * const.c / 1e7
             binwidth = mu / 1e2
@@ -156,6 +167,22 @@ for k in range(0, len(ab.clusters)):
             axs5[row_spec, col_spec].set_xlabel(r"Radial Velocity (x10$^4$km/s)", fontsize=20)
             axs5[row_spec, col_spec].set_ylabel("N", fontsize=20)
             axs5[row_spec, col_spec].tick_params(axis='both', which='major', labelsize=16)
+
+            # fit the A3562 seperately
+            if k == 3:
+                vel_r = r_spec['col4'] * const.c / 1e7
+                binwidth58 = mu58 / 1e2
+                binwidth62 = mu62 / 1e2
+                n58, bins58, patches58 = axs5[row_spec, col_spec].hist(vel_r[is_3558], histtype='step',
+                                                                 bins=np.arange(min(vel_r[is_3558]),
+                                                                                max(vel_r[is_3558]) + binwidth58,
+                                                                                binwidth58),
+                                                                 color='green')
+                n62, bins62, patches62 = axs5[row_spec, col_spec].hist(vel_r[is_3562], histtype='step',
+                                                                 bins=np.arange(min(vel_r[is_3562]),
+                                                                                max(vel_r[is_3562]) + binwidth62,
+                                                                                binwidth62),
+                                                                 color='brown')
 
             # add a 'best fit' line
             parameters, covariance = curve_fit(Gauss, bins[:-1] + binwidth / 2, n)
@@ -171,6 +198,43 @@ for k in range(0, len(ab.clusters)):
                                     xy=(0.03, 0.92),
                                     xycoords='axes fraction',
                                     fontsize=20)
+
+            # fit the A3562 seperately
+            if k == 3:
+                parameters58, covariance58 = curve_fit(Gauss, bins58[:-1] + binwidth58 / 2, n58)
+                parameters62, covariance62 = curve_fit(Gauss, bins62[:-1] + binwidth62 / 2, n62)
+                fit_A58 = parameters58[0]
+                fit_B58 = parameters58[1]
+                fit_C58 = np.abs(parameters58[2])
+                fit_err58 = np.sqrt(np.diag(covariance58))
+                fit_A62 = parameters62[0]
+                fit_B62 = parameters62[1]
+                fit_C62 = np.abs(parameters62[2])
+                fit_err62 = np.sqrt(np.diag(covariance62))
+
+                fit_y58 = Gauss(bins58[:-1] + binwidth58 / 2, fit_A58, fit_B58, fit_C58)
+                axs5[row_spec, col_spec].plot(bins58[:-1] + binwidth58 / 2, fit_y58, '-', color='green')
+
+                axs5[row_spec, col_spec].annotate(r'$\sigma_{rv,3558}$=' + f'{math.ceil(fit_C58 * 1e4)}km/s',
+                                                  xy=(0.03, 0.82),
+                                                  xycoords='axes fraction',
+                                                  fontsize=20,
+                                                  color='green')
+                print(f'fit_A58: {fit_A58}+-{fit_err58[0]}, fit_B58: {fit_B58}+-{fit_err58[1]}, fit_C58: {fit_C58} +- {fit_err58[2]}')
+                print(f'n_member58: {sum(is_3558)}')
+
+                fit_y62 = Gauss(bins62[:-1] + binwidth62 / 2, fit_A62, fit_B62, fit_C62)
+                axs5[row_spec, col_spec].plot(bins62[:-1] + binwidth62 / 2, fit_y62, '-', color='brown')
+
+                axs5[row_spec, col_spec].annotate(r'$\sigma_{rv,3562}$=' + f'{math.ceil(fit_C62 * 1e4)}km/s',
+                                                  xy=(0.03, 0.72),
+                                                  xycoords='axes fraction',
+                                                  fontsize=20,
+                                                  color='brown')
+                print(f'fit_A62: {fit_A62}+-{fit_err62[0]}, fit_B62: {fit_B62}+-{fit_err62[1]}, fit_C62: {fit_C62} +- {fit_err62[2]}')
+                print(f'n_member62: {sum(is_3562)}')
+
+
             axs5[row_spec, col_spec].axvline(x=fit_B - 3 * fit_C, linestyle='--', color='black', alpha=0.5)
             axs5[row_spec, col_spec].axvline(x=fit_B + 3 * fit_C, linestyle='--', color='black', alpha=0.5)
             axs5[row_spec, col_spec].set_xlim([fit_B - 4 * fit_C, fit_B + 4 * fit_C, ])
@@ -233,6 +297,7 @@ for k in range(0, len(ab.clusters)):
             kpc_arcmin = Cosmo.kpc_proper_per_arcmin(ab.redshifts[k])
             sep = coords_cat[matched_cat].separation(ab.coords_cl[k])   # in degrees
             sep_vis = coords_vis[matched_vis].separation(ab.coords_cl[k])  # in degrees
+            # sep_vis = coords_vis[matched_vis].separation(coords_x[k])  # in degrees
             sig_z = np.std(spec['col4'])
             xx = (sep * 6e1 * kpc_arcmin / 1e3 / ab.r200[k]).value
             xx_vis = (sep_vis * 6e1 * kpc_arcmin / 1e3 / ab.r200[k]).value
@@ -270,66 +335,70 @@ for k in range(0, len(ab.clusters)):
 
             axs444 = fig444.add_subplot(gs444[row_spec, col_spec])
 
-            # 1st visual inspection by Duho
-            vis_cat = vis_cat['NUMBER'][matched_vis]
-            vis1 = ascii.read(ab.work_dir + f'vis/{ins[0]}/{ab.clusters[k]}.vis')
-            vis2 = ascii.read(ab.work_dir + f'vis/{ins[1]}/{ab.clusters[k]}.vis')
-            vis3 = ascii.read(ab.work_dir + f'vis/{ins[2]}/{ab.clusters[k]}.vis')
-            for i in range(len(vis_cat)):
-                if vis_cat[i] in vis2['col1']:
-                    ind, = np.where(vis2['col1'] == vis_cat[i])
-                    vote_I = 0
-                    vote_PM = 0
-                    ind_duho, = np.where(vis1['col1'] == vis_cat[i])
-                    # Duho's vote
-                    if vis1['col3'][ind_duho] & 2 ** 7 == 2 ** 7:   # interacting
-                        vote_I = vote_I + 1
-                    if vis1['col3'][ind_duho] & 2 ** 6 == 2 ** 6: # post-merger
-                        vote_PM = vote_PM + 1
-                    # Jake's vote
-                    if vis2['col3'][ind] & 2 ** 7 == 2 ** 7:
-                        vote_I = vote_I + 1
-                    if vis2['col3'][ind] & 2 ** 6 == 2 ** 6:
-                        vote_PM = vote_PM + 1
-                    # Garreth's vote
-                    if vis3['col3'][ind] & 2 ** 7 == 2 ** 7:
-                        vote_I = vote_I + 1
-                    if vis3['col3'][ind] & 2 ** 6 == 2 ** 6:
-                        vote_PM = vote_PM + 1
+            # combine visual inspections
+            with open(ab.work_dir + f'vis/combined/{ab.clusters[k]}.txt', 'w') as res:
+                vis_id = vis_cat['NUMBER'][matched_vis]
+                vis1 = ascii.read(ab.work_dir + f'vis/{ins[0]}/{ab.clusters[k]}.vis')
+                vis2 = ascii.read(ab.work_dir + f'vis/{ins[1]}/{ab.clusters[k]}.vis')
+                vis3 = ascii.read(ab.work_dir + f'vis/{ins[2]}/{ab.clusters[k]}.vis')
+                for i in range(len(vis_id)):
+                    if vis_id[i] in vis2['col1']:
+                        ind, = np.where(vis2['col1'] == vis_id[i])
+                        vote_I = 0
+                        vote_PM = 0
+                        ind_duho, = np.where(vis1['col1'] == vis_id[i])
+                        # Duho's vote
+                        if vis1['col3'][ind_duho] & 2 ** 7 == 2 ** 7:   # interacting
+                            vote_I = vote_I + 1
+                        if vis1['col3'][ind_duho] & 2 ** 6 == 2 ** 6: # post-merger
+                            vote_PM = vote_PM + 1
+                        # Jake's vote
+                        if vis2['col3'][ind] & 2 ** 7 == 2 ** 7:
+                            vote_I = vote_I + 1
+                        if vis2['col3'][ind] & 2 ** 6 == 2 ** 6:
+                            vote_PM = vote_PM + 1
+                        # Garreth's vote
+                        if vis3['col3'][ind] & 2 ** 7 == 2 ** 7:
+                            vote_I = vote_I + 1
+                        if vis3['col3'][ind] & 2 ** 6 == 2 ** 6:
+                            vote_PM = vote_PM + 1
 
-                    if vote_I >= 2:       # 2 or more Interacting
-                        d_three[1] += dist_vis[i]
-                        this_alpha = 0.8
-                        this_marker = "*"
-                        this_size = 50
-                        this_col = 'red'
-                        if in_vir_vis[i]:
-                            n_three[2] += 1
+                        if vote_I >= 2:       # 2 or more Interacting
+                            res.writelines(f"{vis_id[i]} 2\n")
+                            d_three[1] += dist_vis[i]
+                            this_alpha = 0.8
+                            this_marker = "*"
+                            this_size = 50
+                            this_col = 'red'
+                            if in_vir_vis[i]:
+                                n_three[2] += 1
+                            else:
+                                n_three[3] += 1
+                        elif vote_PM >= 2:       # 2 or more PM
+                            res.writelines(f"{vis_id[i]} 1\n")
+                            d_three[2] += dist_vis[i]
+                            this_alpha = 0.5
+                            this_marker = "P"
+                            this_size = 50
+                            this_col = 'orange'
+                            if in_vir_vis[i]:
+                                n_three[4] += 1
+                            else:
+                                n_three[5] += 1
                         else:
-                            n_three[3] += 1
-                    elif vote_PM >= 2:       # 2 or more PM
-                        d_three[2] += dist_vis[i]
-                        this_alpha = 0.5
-                        this_marker = "P"
-                        this_size = 50
-                        this_col = 'orange'
-                        if in_vir_vis[i]:
-                            n_three[4] += 1
-                        else:
-                            n_three[5] += 1
-                    else:
-                        d_three[0] += dist_vis[i]
-                        this_alpha = 0.1
-                        this_marker = "."
-                        this_size = 30
-                        this_col = 'grey'
-                        if in_vir_vis[i]:
-                            n_three[0] += 1
-                        else:
-                            n_three[1] += 1
+                            res.writelines(f"{vis_id[i]} 0\n")
+                            d_three[0] += dist_vis[i]
+                            this_alpha = 0.1
+                            this_marker = "."
+                            this_size = 30
+                            this_col = 'grey'
+                            if in_vir_vis[i]:
+                                n_three[0] += 1
+                            else:
+                                n_three[1] += 1
 
-                    axs444.scatter(xx_vis[i], yy_vis[i], alpha=this_alpha, c=this_col, s=this_size,
-                                                     marker=this_marker)
+                        axs444.scatter(xx_vis[i], yy_vis[i], alpha=this_alpha, c=this_col, s=this_size,
+                                                         marker=this_marker)
 
             axs444.plot([0, 1.2], [1.5, 0], linestyle='--')
             axs444.annotate(f'{ab.clusters[k]}', xy=(0.7, 0.9), xycoords='axes fraction', fontsize=30)

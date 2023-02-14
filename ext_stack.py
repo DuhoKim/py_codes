@@ -12,18 +12,22 @@ import importlib
 importlib.reload(wei)
 #from weight2rms import wei2rms
 
-sex_dir = '/Users/duhokim/work/abell/fits/extracted/'
+# work_dir = ("/Users/user1/Library/CloudStorage/OneDrive-충남대학교/work/abell/")
+
+sex_dir = '/Users/user1/Library/CloudStorage/OneDrive-충남대학교/work/abell/fits/extracted/'
 
 cur_dir = os.getcwd()
 os.chdir(sex_dir)
 
+bands = ['r']
+
 for cluster in ab.clusters:
-	for band in ab.bands:
-		fn = f'/Users/duhokim/work/abell/fits/stacked/{cluster}_{band}si'
+	for band in bands:
+		fn = f'/Users/user1/Library/CloudStorage/OneDrive-충남대학교/work/abell/fits/stacked/{cluster}_{band}si'
 		hdu = fits.open(fn+'.fits')
 		for i in range(1, len(hdu)):	# for each tile
 			os.system(f"sex {cluster}_{band}si_{i}.fits")
-			os.system(f"psfex prepsfex.cat -PSF_SUFFIX .psf")
-			os.system(f"mv prepsfex.psf {cluster}_{band}_{i}.psf")
+			os.system(f"psfex prepsfex.cat -PSF_SUFFIX .fits")
+			os.system(f"mv prepsfex.fits {cluster}_{band}_{i}.fits")
 
 os.chdir(cur_dir)

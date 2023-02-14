@@ -35,7 +35,7 @@ rad_lim = 2.0 # only include detection inside [degree]
 # mag_lim = 25
 # rad_lim = 0.8 # only include detection inside [degree]
 
-work_dir = ("/Users/duhokim/work/abell/")
+work_dir = ("/Users/user1/Library/CloudStorage/OneDrive-충남대학교/work/abell/")
 plot_dir = work_dir+'plot/'
 sex_dir = work_dir+'sex/cat/'
 cat_dir = work_dir+'cat/'
