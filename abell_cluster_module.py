@@ -35,7 +35,7 @@ rad_lim = 2.0 # only include detection inside [degree]
 # mag_lim = 25
 # rad_lim = 0.8 # only include detection inside [degree]
 
-work_dir = ("/Users/user1/Library/CloudStorage/OneDrive-충남대학교/work/abell/")
+work_dir = ("/Users/duhokim/Library/CloudStorage/OneDrive-충남대학교/work/abell/")
 plot_dir = work_dir+'plot/'
 sex_dir = work_dir+'sex/cat/'
 cat_dir = work_dir+'cat/'
@@ -44,11 +44,14 @@ deep_cat_dir=("/Volumes/APPLE SSD/Server/work/sex/stack/")
 check_dir=("/Volumes/APPLE SSD/fits/check/")
 
 clusters = ['A754', 'A2399', 'A2670', 'A3558', 'A3574', 'A3659', 'A3716']
+specs = ['WINGS+OmegaWINGS', 'WINGS+OmegaWINGS+SDSS', 'SDSS', 'OmegaWINGS+Shapley Supercluster', 'Yonsei', 'Yonsei', 'OmegaWINGS']
 redshifts = [0.05450, 0.05790, 0.07619, 0.04800, 0.01600, 0.09070, 0.04620]
 r200 = [2.4, 1.83, 1.69, 2.49, 1.2, 1.2, 2.46]
 m200 = [15.8, 7.0, 5.5, 17.6, 1.9, 2.0, 17.0]
 sig_vr = [9.7e2, 7.39e2, 6.83e2, 1.005e3, -1, -1, 9.95e2]
 vr = [1.64e4, 1.73e4, 2.28e4, 1.45e4, -1, -1, 1.37e4]
+
+
 distmod = Planck18.distmod(redshifts).value
 bands = ['u', 'g', 'r']
 

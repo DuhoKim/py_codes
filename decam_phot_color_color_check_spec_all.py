@@ -46,7 +46,7 @@ alpha2 = 0.15
 g_yran = [0, 1.5]
 u_yran = [1, 4]
 
-ins = ['Duho', 'Jake', 'Garreth']
+ins = ['Duho', 'Jake', 'Garreth', 'Adarsh']
 cols = ['black', 'red', 'purple', 'darkorange', 'olive', 'darkgreen', 'teal']
 img_files = ['_rgb_jar_3.png', '_rgb_sqrt_0_1.png', '_rgb_sqrt_0_01_big.png', '_rgb_sqrt_0_001_big.png', '_gala.png']
 
@@ -68,26 +68,35 @@ fig, axs = plt.subplots(2, len(ab.clusters), tight_layout=True, figsize=(20, 6))
 fig2, axs2 = plt.subplots(2, 1, tight_layout=True, figsize=(8, 12))
 # fig3, axs3 = plt.subplots(2, 4, tight_layout=True, figsize=(12, 6))
 fig3 = plt.figure(tight_layout=True, figsize=(14, 6))
-fig33, axs33 = plt.subplots(2, 3, tight_layout=True, figsize=(15, 10))
+fig33 = plt.figure(tight_layout=True, figsize=(12, 6))
+fig33_2 = plt.figure(tight_layout=True, figsize=(9, 6))
+fig333 = plt.figure(tight_layout=True, figsize=(9, 6))
 fig5, axs5 = plt.subplots(2, 3, tight_layout=True, figsize=(15, 10))
 # fig6, axs6 = plt.subplots(2, 4, tight_layout=True, figsize=(12, 6))
 fig444 = plt.figure(tight_layout=True, figsize=(15, 10))
 fig6 = plt.figure(tight_layout=True, figsize=(12, 6))
-fig7 = plt.figure(tight_layout=True, figsize=(12, 6))
+fig7 = plt.figure(tight_layout=True, figsize=(9, 6))
 fig77 = plt.figure(tight_layout=True, figsize=(9, 6))
 fig8 = plt.figure(tight_layout=True, figsize=(6, 6))
 fig9 = plt.figure(tight_layout=True, figsize=(6, 6))
 fig10, axs10 = plt.subplots(tight_layout=True, figsize=(6, 6))
 fig11, axs11 = plt.subplots(tight_layout=True, figsize=(6, 6))
 fig12 = plt.figure(figsize=(6,6))
+fig13 = plt.figure(figsize=(6,6))
+fig14 = plt.figure(figsize=(6,6))
 
 gs3 = fig3.add_gridspec(2, 4, wspace=0.2, hspace=0)
+gs33 = fig33.add_gridspec(2, 3, wspace=0.2, hspace=0)
+gs33_2 = fig33_2.add_gridspec(2, 3, wspace=0.2, hspace=0)
+gs333 = fig3.add_gridspec(2, 3, wspace=0.2, hspace=0)
 gs = fig6.add_gridspec(2, 4, wspace=0, hspace=0)
 gs444 = fig444.add_gridspec(2, 3, wspace=0, hspace=0)
-gs7 = fig7.add_gridspec(2, 4, wspace=0, hspace=0)
+gs7 = fig7.add_gridspec(2, 3, wspace=0, hspace=0)
 gs77 = fig77.add_gridspec(2, 3, wspace=0, hspace=0)
 axs9 = fig9.add_subplot()
 axs12 = fig12.add_subplot()
+axs13 = fig13.add_subplot()
+axs14 = fig14.add_subplot()
 
 f_int_tot = []
 d_int_tot = []
@@ -95,6 +104,28 @@ f_pm_tot = []
 d_pm_tot = []
 f_eith_tot = []
 d_eith_tot = []
+
+tot_num = 0
+tot = []
+dk_int_num = 0
+dk_int = []
+dk_pm_num = 0
+dk_pm = []
+gm_int_num = 0
+gm_int = []
+gm_pm_num = 0
+gm_pm = []
+jc_int_num = 0
+jc_int = []
+jc_pm_num = 0
+jc_pm = []
+ar_int_num = 0
+ar_int = []
+ar_pm_num = 0
+ar_pm = []
+vote_int_cum = []   # for histogram of agreement rate in I
+vote_pm_cum = []   # for histogram of agreement rate in PM
+
 
 for k in range(0, len(ab.clusters)):
 # for k in range(0, 3):
@@ -127,8 +158,11 @@ for k in range(0, len(ab.clusters)):
         is_sex_volume = (sex_cat[ab.mag_sys + '_r'] - ab.distmod[k]) < -20
         is_vis_volume = (vis_cat['MAG_AUTO_r'] - ab.distmod[k]) < -20
 
+        ### Volume-limited sample
+        sex_cat_orig = sex_cat
         sex_cat = sex_cat[is_sex_volume]
         vis_cat = vis_cat[is_vis_volume]
+
 
         ### cross match to spec
         spec = ascii.read(ab.work_dir+f'spec/{ab.clusters[k]}_spec_ra_dec_z_zran_0.05_rran_1.5.txt')
@@ -149,11 +183,20 @@ for k in range(0, len(ab.clusters)):
 
             # fit the A3562 seperately
             if k == 3:
-                r_spec = ascii.read(ab.work_dir + f'spec/{ab.clusters[k]}_spec_ra_dec_z.txt')
-                r_cat = ascii.read(ab.work_dir + f'spec/{ab.clusters[k]}_class_uncer.csv', format='csv')
+                r_spec = ascii.read(ab.work_dir + f'spec/{ab.clusters[k]}_spec_ra_dec_z_zran_0.05_rran_1.5.txt')
+                r_cat = ascii.read(ab.work_dir + f'spec/{ab.clusters[k]}_7_6_VVV_class_uncer_zran_0.05_rran_1.5.csv', format='csv')
                 # fit the real A3558 first
                 is_3558 = (r_cat['classification'] == 2)
                 is_3562 = (r_cat['classification'] == 5)
+                (mu58, sigma58) = norm.fit(r_spec['col4'][is_3558] * const.c / 1e7)
+                (mu62, sigma62) = norm.fit(r_spec['col4'][is_3562] * const.c / 1e7)
+            elif k == 6:
+                r_spec = ascii.read(ab.work_dir + f'spec/{ab.clusters[k]}_spec_ra_dec_z_zran_0.05_rran_1.5.txt')
+                r_cat = ascii.read(ab.work_dir + f'spec/{ab.clusters[k]}_1_2_EEI_class_uncer_zran_0.05_rran_1.5.csv',
+                                   format='csv')
+                # fit the real A3558 first
+                is_3558 = (r_cat['classification'] == 1)
+                is_3562 = (r_cat['classification'] == 2)
                 (mu58, sigma58) = norm.fit(r_spec['col4'][is_3558] * const.c / 1e7)
                 (mu62, sigma62) = norm.fit(r_spec['col4'][is_3562] * const.c / 1e7)
 
@@ -183,6 +226,20 @@ for k in range(0, len(ab.clusters)):
                                                                                 max(vel_r[is_3562]) + binwidth62,
                                                                                 binwidth62),
                                                                  color='brown')
+            elif k == 6:
+                vel_r = r_spec['col4'] * const.c / 1e7
+                binwidth58 = mu58 / 1e2
+                binwidth62 = mu62 / 1e2
+                n58, bins58, patches58 = axs5[row_spec, col_spec].hist(vel_r[is_3558], histtype='step',
+                                                                       bins=np.arange(min(vel_r[is_3558]),
+                                                                                      max(vel_r[is_3558]) + binwidth58,
+                                                                                      binwidth58),
+                                                                       color='orange')
+                n62, bins62, patches62 = axs5[row_spec, col_spec].hist(vel_r[is_3562], histtype='step',
+                                                                       bins=np.arange(min(vel_r[is_3562]),
+                                                                                      max(vel_r[is_3562]) + binwidth62,
+                                                                                      binwidth62),
+                                                                       color='green')
 
             # add a 'best fit' line
             parameters, covariance = curve_fit(Gauss, bins[:-1] + binwidth / 2, n)
@@ -233,6 +290,41 @@ for k in range(0, len(ab.clusters)):
                                                   color='brown')
                 print(f'fit_A62: {fit_A62}+-{fit_err62[0]}, fit_B62: {fit_B62}+-{fit_err62[1]}, fit_C62: {fit_C62} +- {fit_err62[2]}')
                 print(f'n_member62: {sum(is_3562)}')
+            elif k == 6:
+                parameters58, covariance58 = curve_fit(Gauss, bins58[:-1] + binwidth58 / 2, n58)
+                parameters62, covariance62 = curve_fit(Gauss, bins62[:-1] + binwidth62 / 2, n62)
+                fit_A58 = parameters58[0]
+                fit_B58 = parameters58[1]
+                fit_C58 = np.abs(parameters58[2])
+                fit_err58 = np.sqrt(np.diag(covariance58))
+                fit_A62 = parameters62[0]
+                fit_B62 = parameters62[1]
+                fit_C62 = np.abs(parameters62[2])
+                fit_err62 = np.sqrt(np.diag(covariance62))
+
+                fit_y58 = Gauss(bins58[:-1] + binwidth58 / 2, fit_A58, fit_B58, fit_C58)
+                axs5[row_spec, col_spec].plot(bins58[:-1] + binwidth58 / 2, fit_y58, '-', color='orange')
+
+                axs5[row_spec, col_spec].annotate(r'$\sigma_{rv,3716S}$=' + f'{math.ceil(fit_C58 * 1e4)}km/s',
+                                                  xy=(0.03, 0.72),
+                                                  xycoords='axes fraction',
+                                                  fontsize=20,
+                                                  color='orange')
+                print(
+                    f'fit_A58: {fit_A58}+-{fit_err58[0]}, fit_B58: {fit_B58}+-{fit_err58[1]}, fit_C58: {fit_C58} +- {fit_err58[2]}')
+                print(f'n_member58: {sum(is_3558)}')
+
+                fit_y62 = Gauss(bins62[:-1] + binwidth62 / 2, fit_A62, fit_B62, fit_C62)
+                axs5[row_spec, col_spec].plot(bins62[:-1] + binwidth62 / 2, fit_y62, '-', color='green')
+
+                axs5[row_spec, col_spec].annotate(r'$\sigma_{rv,3716N}$=' + f'{math.ceil(fit_C62 * 1e4)}km/s',
+                                                  xy=(0.03, 0.82),
+                                                  xycoords='axes fraction',
+                                                  fontsize=20,
+                                                  color='green')
+                print(
+                    f'fit_A62: {fit_A62}+-{fit_err62[0]}, fit_B62: {fit_B62}+-{fit_err62[1]}, fit_C62: {fit_C62} +- {fit_err62[2]}')
+                print(f'n_member62: {sum(is_3562)}')
 
 
             axs5[row_spec, col_spec].axvline(x=fit_B - 3 * fit_C, linestyle='--', color='black', alpha=0.5)
@@ -252,7 +344,7 @@ for k in range(0, len(ab.clusters)):
                 is_member_sha = (sha_vel > fit_B - 3 * fit_C) & (sha_vel < fit_B + 3 * fit_C)
                 sha = sha[is_member_sha]
 
-
+        ### For volume-limited sample
         coords_cat = SkyCoord(sex_cat['ALPHA_J2000'], sex_cat['DELTA_J2000'], unit='deg')
         coords_vis = SkyCoord(vis_cat['ALPHA_J2000'], vis_cat['DELTA_J2000'], unit='deg')
         coords_spec = SkyCoord(spec['col2'], spec['col3'], unit='deg')
@@ -261,6 +353,12 @@ for k in range(0, len(ab.clusters)):
         matched_cat = (d2d.arcsec < ab.max_sep) & (sex_cat[ab.mag_sys+'_u'] < 900) & \
                       (sex_cat[ab.mag_sys+'_g'] < 900) & (sex_cat[ab.mag_sys+'_r'] < 900)
         matched_vis = (d2d_vis.arcsec < ab.max_sep)
+
+        ### For all sample
+        coords_orig = SkyCoord(sex_cat_orig['ALPHA_J2000'], sex_cat_orig['DELTA_J2000'], unit='deg')
+        coords_spec = SkyCoord(spec['col2'], spec['col3'], unit='deg')
+        idx_spec_orig, d2d_orig, d3d = coords_orig.match_to_catalog_sky(coords_spec)
+        matched_orig = (d2d_orig.arcsec < ab.max_sep)
 
         if k == 3:
             coords_sha_str = []
@@ -341,30 +439,57 @@ for k in range(0, len(ab.clusters)):
                 vis1 = ascii.read(ab.work_dir + f'vis/{ins[0]}/{ab.clusters[k]}.vis')
                 vis2 = ascii.read(ab.work_dir + f'vis/{ins[1]}/{ab.clusters[k]}.vis')
                 vis3 = ascii.read(ab.work_dir + f'vis/{ins[2]}/{ab.clusters[k]}.vis')
+                vis4 = ascii.read(ab.work_dir + f'vis/{ins[3]}/{ab.clusters[k]}.vis')
                 for i in range(len(vis_id)):
                     if vis_id[i] in vis2['col1']:
                         ind, = np.where(vis2['col1'] == vis_id[i])
                         vote_I = 0
                         vote_PM = 0
                         ind_duho, = np.where(vis1['col1'] == vis_id[i])
+                        tot_num += 1
+                        tot.append(tot_num)
                         # Duho's vote
                         if vis1['col3'][ind_duho] & 2 ** 7 == 2 ** 7:   # interacting
                             vote_I = vote_I + 1
+                            dk_int_num += 1
+                        dk_int.append(dk_int_num)
                         if vis1['col3'][ind_duho] & 2 ** 6 == 2 ** 6: # post-merger
                             vote_PM = vote_PM + 1
+                            dk_pm_num += 1
+                        dk_pm.append(dk_pm_num)
                         # Jake's vote
                         if vis2['col3'][ind] & 2 ** 7 == 2 ** 7:
                             vote_I = vote_I + 1
+                            jc_int_num += 1
+                        jc_int.append(jc_int_num)
                         if vis2['col3'][ind] & 2 ** 6 == 2 ** 6:
                             vote_PM = vote_PM + 1
+                            jc_pm_num += 1
+                        jc_pm.append(jc_pm_num)
                         # Garreth's vote
                         if vis3['col3'][ind] & 2 ** 7 == 2 ** 7:
                             vote_I = vote_I + 1
+                            gm_int_num += 1
+                        gm_int.append(gm_int_num)
                         if vis3['col3'][ind] & 2 ** 6 == 2 ** 6:
                             vote_PM = vote_PM + 1
+                            gm_pm_num += 1
+                        gm_pm.append(gm_pm_num)
+                        # Adarsh's vote
+                        if vis4['col3'][ind] & 2 ** 7 == 2 ** 7:
+                            vote_I = vote_I + 1
+                            ar_int_num += 1
+                        ar_int.append(ar_int_num)
+                        if vis4['col3'][ind] & 2 ** 6 == 2 ** 6:
+                            vote_PM = vote_PM + 1
+                            ar_pm_num += 1
+                        ar_pm.append(ar_pm_num)
+
+                        vote_int_cum.append(vote_I)
+                        vote_pm_cum.append(vote_PM)
 
                         if vote_I >= 2:       # 2 or more Interacting
-                            res.writelines(f"{vis_id[i]} 2\n")
+                            res.writelines(f"{vis_id[i]} 2 {vote_I}\n")
                             d_three[1] += dist_vis[i]
                             this_alpha = 0.8
                             this_marker = "*"
@@ -375,7 +500,7 @@ for k in range(0, len(ab.clusters)):
                             else:
                                 n_three[3] += 1
                         elif vote_PM >= 2:       # 2 or more PM
-                            res.writelines(f"{vis_id[i]} 1\n")
+                            res.writelines(f"{vis_id[i]} 1 {vote_PM}\n")
                             d_three[2] += dist_vis[i]
                             this_alpha = 0.5
                             this_marker = "P"
@@ -386,7 +511,7 @@ for k in range(0, len(ab.clusters)):
                             else:
                                 n_three[5] += 1
                         else:
-                            res.writelines(f"{vis_id[i]} 0\n")
+                            res.writelines(f"{vis_id[i]} 0 0\n")
                             d_three[0] += dist_vis[i]
                             this_alpha = 0.1
                             this_marker = "."
@@ -528,27 +653,34 @@ for k in range(0, len(ab.clusters)):
         #                      [f * (model2.params[1]) + model2.params[0] + model2.bse[0] for f in xran],
         #                      alpha=0.1, color=cols[k])
 
-        xran6 = [13, 20]
+        xran6 = [12, 20]
         size2 = 10
         alpha2 = 0.1
 
         # axs6 = plt.subplot(gs[row, col])
         axs6 = fig6.add_subplot(gs[row, col])
-        axs7 = fig7.add_subplot(gs7[row, col])
+
         if k == 3:
             axs8 = fig8.add_subplot()
             axs8.scatter(r_spec, g_spec - r_spec, label=f'{ab.clusters[k]}', alpha=0.4, s=5, color='teal',
                          facecolors='none')
             axs8.scatter(sex_cat[ab.mag_sys + '_r'], sex_cat[ab.mag_sys + '_g'] - sex_cat[ab.mag_sys + '_r'],
                          label=f'{ab.clusters[k]}', alpha=0.2, s=1, color='grey', facecolors='none')
-        axs7.scatter(r_spec, g_spec - r_spec, label=f'{ab.clusters[k]}', alpha=0.4, s=5, color='teal',
-                               facecolors='none')
+
         axs6.scatter(sex_cat[ab.mag_sys + '_r'], sex_cat[ab.mag_sys + '_g'] - sex_cat[ab.mag_sys + '_r'],
                                label=f'{ab.clusters[k]}', alpha=0.2, s=1, color='grey', facecolors='none')
-        axs7.scatter(sex_cat[ab.mag_sys + '_r'], sex_cat[ab.mag_sys + '_g'] - sex_cat[ab.mag_sys + '_r'],
-                               label=f'{ab.clusters[k]}', alpha=0.2, s=1, color='grey', facecolors='none')
+
 
         if is_spec:
+            axs33 = fig33.add_subplot(gs33[row_spec, col_spec])
+            axs33_2 = fig33_2.add_subplot(gs33_2[row_spec, col_spec])
+            axs333 = fig333.add_subplot(gs333[row_spec, col_spec])
+            axs7 = fig7.add_subplot(gs7[row_spec, col_spec])
+            axs7.scatter(r_spec, g_spec - r_spec, label=f'{ab.clusters[k]}', alpha=0.4, s=5, color='teal',
+                         facecolors='none')
+            axs7.scatter(sex_cat[ab.mag_sys + '_r'], sex_cat[ab.mag_sys + '_g'] - sex_cat[ab.mag_sys + '_r'],
+                         label=f'{ab.clusters[k]}', alpha=0.2, s=1, color='grey', facecolors='none')
+
             axs77 = fig77.add_subplot(gs77[row_spec, col_spec])
             axs77.scatter(r_spec, g_spec - r_spec, label=f'{ab.clusters[k]}', alpha=0.4, s=5, color='teal',
                       facecolors='none')
@@ -578,50 +710,65 @@ for k in range(0, len(ab.clusters)):
         # axs6.plot(xran6, [f * best_a + best_b + 0.1 for f in xran6], '--', alpha=0.2, color='grey',
         #                     label=f'{ab.clusters[k]}')
         axs6.axvline(x=18, linestyle='--', color='grey')
-        axs7.axvline(x=18, linestyle=':', color='grey', alpha=0.5)
+
+        if is_spec:
+            # axs7.axvline(x=18, linestyle=':', color='grey', alpha=0.5)
+            axs7.axvline(x=-20 + ab.distmod[k], linestyle='--', color='grey')
 
         # axs6.axvline(x=-20 + ab.distmod[k], linestyle='--', color='grey')
-        axs7.axvline(x=-20 + ab.distmod[k], linestyle='--', color='grey')
 
-        if k == 3:
-            axs8.axvline(x=-20 + ab.distmod[k], linestyle='--', color='grey')
-            axs8.set_xlabel("r'", fontsize=20)
-            axs8.set_ylabel("g' - r'", fontsize=20)
-            axs8.set_xlim([13, 20])
-            axs8.set_ylim([0, 1.1])
-            axs8.annotate(f'{ab.clusters[k]}', xy=(0.05, 0.05), xycoords='axes fraction', fontsize=20)
 
         if (row == 0 and col < 3):
             plt.setp(axs6.get_xticklabels(), visible=False, fontsize=20)
-            plt.setp(axs7.get_xticklabels(), visible=False, fontsize=20)
         else:
             axs6.set_xlabel("r'", fontsize=20)
-            axs7.set_xlabel("r'", fontsize=20)
         if col:
             plt.setp(axs6.get_yticklabels(), visible=False, fontsize=20)
-            plt.setp(axs7.get_yticklabels(), visible=False, fontsize=20)
         else:
             axs6.set_ylabel("g' - r'", fontsize=20)
-            axs7.set_ylabel("g' - r'", fontsize=20)
         if is_spec:
             if (row_spec == 0 and col_spec < 2):
+                plt.setp(axs33.get_xticklabels(), visible=False, fontsize=20)
+                plt.setp(axs33_2.get_xticklabels(), visible=False, fontsize=20)
+                plt.setp(axs333.get_xticklabels(), visible=False, fontsize=20)
+                plt.setp(axs7.get_xticklabels(), visible=False, fontsize=20)
                 plt.setp(axs77.get_xticklabels(), visible=False, fontsize=20)
             else:
+                axs33.set_xlabel("r' - DM(z)", fontsize=20)
+                axs33_2.set_xlabel("r' - DM(z)", fontsize=20)
+                axs333.set_xlabel("r' - DM(z)", fontsize=20)
+                axs7.set_xlabel("r'", fontsize=20)
                 axs77.set_xlabel("r'", fontsize=20)
             if col_spec:
+                # plt.setp(axs33.get_yticklabels(), visible=False, fontsize=20)
+                plt.setp(axs7.get_yticklabels(), visible=False, fontsize=20)
                 plt.setp(axs77.get_yticklabels(), visible=False, fontsize=20)
             else:
+                axs33.set_ylabel("N", fontsize=20)
+                axs33_2.set_ylabel(r'N$_{spec}$/N$_{rs}$', fontsize=20)
+                axs333.set_ylabel("N", fontsize=20)
+                axs7.set_ylabel("g' - r'", fontsize=20)
                 axs77.set_ylabel("g' - r'", fontsize=20)
+            axs33.set_xlim([-25, -20])
+            axs33_2.set_xlim([-25, -20])
+            axs7.set_xlim([12, 18])
             axs77.set_xlim([13, 20])
             axs77.set_ylim([0, 1.1])
+            axs7.set_ylim([0, 1.1])
+            axs33.annotate(f'{ab.clusters[k]}', xy=(0.05, 0.85), xycoords='axes fraction', fontsize=20)
+            axs33_2.annotate(f'{ab.clusters[k]}', xy=(0.05, 0.85), xycoords='axes fraction', fontsize=20)
+            axs333.annotate(f'{ab.clusters[k]}', xy=(0.05, 0.85), xycoords='axes fraction', fontsize=20)
+            axs333.tick_params(direction='in', top=True, right=True)
+            axs333.grid(which='both', color='k', linestyle='--', linewidth=0.2, alpha=0.6)
+            axs333.set_xticks([-24, -22, -20, -18, -16])
+            # axs333.axvline(x=-20, color='k', linestyle='--', line)
             axs77.annotate(f'{ab.clusters[k]}', xy=(0.05, 0.05), xycoords='axes fraction', fontsize=20)
+            axs7.annotate(f'{ab.clusters[k]}', xy=(0.05, 0.05), xycoords='axes fraction', fontsize=20)
 
         axs6.set_xlim([13, 20])
-        axs7.set_xlim([13, 20])
         axs6.set_ylim([0, 1.1])
-        axs7.set_ylim([0, 1.1])
         axs6.annotate(f'{ab.clusters[k]}', xy=(0.05, 0.05), xycoords='axes fraction', fontsize=20)
-        axs7.annotate(f'{ab.clusters[k]}', xy=(0.05, 0.05), xycoords='axes fraction', fontsize=20)
+
 
         plt.subplots_adjust(hspace=.0, wspace=.0)
 
@@ -658,10 +805,14 @@ for k in range(0, len(ab.clusters)):
                                         [f * (model_red.params[1]) + model_red.params[0] + factor * one_sig for f in xran6],
                                         alpha=0.1, color=color)
 
-
-        axs7.plot(xran6, [f * model_red.params[1] + model_red.params[0] for f in xran6], '--', alpha=0.5,
-                  color=color,
-                  label=f'{ab.clusters[k]}')
+        if is_spec:
+            axs7.plot(xran6, [f * model_red.params[1] + model_red.params[0] for f in xran6], '--', alpha=0.5,
+                      color=color,
+                      label=f'{ab.clusters[k]}')
+            axs7.annotate(rf"g'-r' = r' * {'{:.3f}'.format(model_red.params[1])}", xy=(0.05, 0.93), xycoords='axes fraction', fontsize=10,
+                          color='blue')
+            axs7.annotate(rf"+ {'{:.3f}'.format(model_red.params[0])}", xy=(0.05, 0.88), xycoords='axes fraction', fontsize=10,
+                          color='blue')
         if k != 5:
             axs9.scatter((-20 + ab.distmod[k]) * model_red.params[1] + model_red.params[0], model_red.params[1],
                          s=one_sig*1000, c='black')
@@ -673,19 +824,20 @@ for k in range(0, len(ab.clusters)):
             #           f'z={ab.redshifts[k]}', fontsize=10)
             # axs9.text((-20 + ab.distmod[k]) * model_red.params[1] + model_red.params[0], model_red.params[1] + 0.006,
             #           f'N={len(r_red)}', fontsize=10)
-
-        axs7.fill_between(xran6,
-                          [f * (model_red.params[1]) + model_red.params[0] - factor * one_sig for f in
-                           xran6],
-                          [f * (model_red.params[1]) + model_red.params[0] + factor * one_sig for f in
-                           xran6],
-                          alpha=0.1, color=color)
+        if is_spec:
+            axs7.fill_between(xran6,
+                              [f * (model_red.params[1]) + model_red.params[0] - factor * one_sig for f in
+                               xran6],
+                              [f * (model_red.params[1]) + model_red.params[0] + factor * one_sig for f in
+                               xran6],
+                              alpha=0.1, color=color)
         print(f'one_sig: {one_sig}')
 
         ### histogram
 
         axs3 = fig3.add_subplot(gs3[row, col])
         r_abs_kcor = sex_cat[ab.mag_sys + '_r'] - ab.distmod[k]
+        r_abs_kcor_orig = sex_cat_orig[ab.mag_sys + '_r'] - ab.distmod[k]
         num_sam = np.sum(r_abs_kcor < -20)
         num_spec_sam = np.sum(r_abs_kcor[matched_cat] < -20)
 
@@ -716,9 +868,23 @@ for k in range(0, len(ab.clusters)):
         axs3.hist(r_abs_kcor[in_rs], range=(-25, -20), histtype='step', color='red')
         axs3.hist(r_abs_kcor[matched_cat], range=(-25, -20), histtype='step', color='green')
 
+        # axs333.hist(r_abs_kcor_orig, range=(-25, -15), histtype='step', color='blue')
+
+
         if is_spec:
-            axs33[row_spec, col_spec].hist(r_abs_kcor[in_rs], range=(-25, -20), histtype='step', color='red')
-            axs33[row_spec, col_spec].hist(r_abs_kcor[matched_cat][in_rs_spec], range=(-25, -20), histtype='step', color='green')
+            axs333.hist(r_abs_kcor_orig[matched_orig], range=(-25, -15), histtype='step', color='green')
+            axs333.annotate(r'N$_{spec}$=' + f'{np.sum(matched_orig)}', xy=(0.05, 0.75), xycoords='axes fraction', fontsize=10,
+                          color='green')
+            axs333.annotate(f'{ab.specs[k]}', xy=(0.05, 0.65), xycoords='axes fraction', fontsize=10, color='green')
+            n_rs, bins_rs, patches_rs = axs33.hist(r_abs_kcor[in_rs], range=(-25, -20), histtype='step', color='red')
+            n_spec, bins_spec, patches_spec = axs33.hist(r_abs_kcor[matched_cat][in_rs_spec], range=(-25, -20), histtype='step', color='green')
+            is_nonzero = np.where(n_rs > 0)
+            axs33_right = axs33.twinx()
+            axs33_2.plot(bins_rs[is_nonzero] + 0.45, [a/b for a, b in zip(n_spec[is_nonzero], n_rs[is_nonzero])])
+            axs33_right.plot(bins_rs[is_nonzero] + 0.45, [a / b for a, b in zip(n_spec[is_nonzero], n_rs[is_nonzero])],
+                             color='blue', alpha=0.5, linestyle=':')
+
+            axs33_right.set_ylim([0, 1])
 
         # axs3.set_ylabel('N')#, color = 'blue')
         axs3.annotate(r'N$_{phot}$=' + f'{num_sam}', xy=(0.05, 0.75), xycoords='axes fraction', fontsize=10,
@@ -729,18 +895,13 @@ for k in range(0, len(ab.clusters)):
                       fontsize=10, color='green')
 
         if is_spec:
-            axs33[row_spec, col_spec].annotate(r'N$_{rs}$=' + f'{num_sam_rs}', xy=(0.05, 0.65), xycoords='axes fraction', fontsize=10,
-                          color='red')
-            axs33[row_spec, col_spec].annotate(r'N$_{spec}$=' + f'{num_sam_rs_spec}', xy=(0.05, 0.55), xycoords='axes fraction',
-                          fontsize=10, color='green')
+            axs33.annotate(r'N$_{rs}$=' + f'{num_sam_rs}', xy=(0.05, 0.65), xycoords='axes fraction', fontsize=15, color='red')
+            axs33.annotate(r'N$_{spec}$=' + f'{num_sam_rs_spec}', xy=(0.05, 0.55), xycoords='axes fraction',
+                          fontsize=15, color='green')
         # axs3.set_xlabel(r'M$_r$')
         axs3.set_xlim([-25, -20])
-        if is_spec:
-            axs33[row_spec, col_spec].set_xlim([-25, -20])
         # axs3.set_title(ab.clusters[k])
         axs3.annotate(f'{ab.clusters[k]}', xy=(0.05, 0.85), xycoords='axes fraction', fontsize=20)
-        if is_spec:
-            axs33[row_spec, col_spec].annotate(f'{ab.clusters[k]}', xy=(0.05, 0.85), xycoords='axes fraction', fontsize=20)
 
         if row == 0 and col < 3:
             plt.setp(axs3.get_xticklabels(), visible=False, fontsize=20)
@@ -750,41 +911,11 @@ for k in range(0, len(ab.clusters)):
             # plt.setp(axs3.get_yticklabels(), visible=False, fontsize=20)
             # else:
             axs3.set_ylabel("N", fontsize=20)
-
-        if is_spec:
-            axs33[row_spec, col_spec].set_xlabel("r' - DM(z)", fontsize=20)
-            axs33[row_spec, col_spec].set_ylabel("N", fontsize=20)
-
-        # for i in range(0, 10):
-        #     # color = cols[k] if i == 4 else 'grey'
-        #     color =  'grey'
-        #     old_slope = model6.params[1]
-        #     in_2sig = (g_spec - r_spec < model6.params[1] * r_spec + model6.params[0] + factor * model6.bse[0]) & \
-        #               (g_spec - r_spec > model6.params[1] * r_spec + model6.params[0] - factor * model6.bse[0])
-        #
-        #     New_Data_Frame = {'g_r': np.array(g_spec[in_2sig] - r_spec[in_2sig]), 'r_app': np.array(r_spec[in_2sig]),
-        #                       'g_r_err': merr_good_g[in_2sig]}
-        #     df = pd.DataFrame(New_Data_Frame, columns=['g_r', 'r_app', 'g_r_err'])
-        #     X2 = sm.add_constant(df[['r_app']])
-        #     model6 = sm.WLS(df['g_r'], X2, weights=1 / df['g_r_err']).fit()
-        #
-        #     print("{} g-r {} {} {} {} {}".format(ab.clusters[k], i, model6.params[0], model6.bse[0], model6.params[1],
-        #                                          model.bse[1]))
-        #
-        #     axs6.plot(xran6, [f * model6.params[1] + model6.params[0] for f in xran6], '-', alpha=0.8, color=color,
-        #                         label=f'{ab.clusters[k]}')
-        #     axs6.fill_between(xran6,
-        #                                 [f * (model6.params[1]) + model6.params[0] - factor * model6.bse[0] for f in xran6],
-        #                                 [f * (model6.params[1]) + model6.params[0] + factor * model6.bse[0] for f in xran6],
-        #                                 alpha=0.1, color=color)
-        #
-        #     if np.abs(old_slope - model6.params[1]) < slope_fit_lim:
-        #         break
-
-        # axs6[row, col].set_title(ab.clusters[k])
-
-
-
+        if row == 0 and col == 2:
+            axs33_right.set_ylabel('Completeness', fontsize=15, color='blue', rotation=270, labelpad=20)
+        if row == 1 and col == 2:
+            axs33_right.set_ylabel('Completeness', fontsize=15, color='blue', rotation=270, labelpad=20)
+        axs33_right.set_yticks([0.2, 0.4, 0.6, 0.8, 1.0])
 
         axs[0, k].set_title(ab.clusters[k])
         axs[0, k].set_xlim(xran)
@@ -796,7 +927,8 @@ for k in range(0, len(ab.clusters)):
         axs[0, k].set_ylabel('g - r')
         axs[1, k].set_ylabel('u - r')
         axs[0, k].text(-22, 1.75, f'N={len(r_spec)}')
-
+    if is_spec:
+        axs13.text(tot_num, 30, f'{ab.clusters[k]}', rotation=90)
 
 axs2[0].set_xlim(xran)
 axs2[1].set_xlim(xran)
@@ -855,6 +987,27 @@ axs12.legend(fontsize=15)
 
 # axs12.plot(xxx, 50 / (xxx * (1 + xxx) ** 2), linestyle='-.', alpha=0.5, color='grey')
 
+axs13.plot(tot, dk_pm, label='A, PM', color='b', linestyle=':')
+axs13.plot(tot, dk_int, label='A, M', color='b')
+axs13.plot(tot, gm_pm, label='B, PM', color='r', linestyle=':')
+axs13.plot(tot, gm_int, label='B, M', color='r')
+axs13.plot(tot, jc_pm, label='C, PM', color='g', linestyle=':')
+axs13.plot(tot, jc_int, label='C, M', color='g')
+axs13.plot(tot, ar_pm, label='D, PM', color='c', linestyle=':')
+axs13.plot(tot, ar_int, label='D, M', color='c')
+axs13.set_xlabel('Incremental # of gals', fontsize=15)
+axs13.set_ylabel('Cumulative # of feature-type gals', fontsize=15)
+axs13.tick_params(axis='both', which='both', direction='in', right=True, labelsize=15)
+axs13.legend(fontsize=12)
+
+axs14.hist(vote_int_cum, color='b', label='I', bins=3, range=(1, 4), histtype='step')
+axs14.hist(vote_pm_cum, color='orange', label='PM', bins=3, range=(1, 4), histtype='step')
+axs14.set_xlabel('Vote number', fontsize=20)
+axs14.set_ylabel('Counts', fontsize=20)
+axs14.set_xticks([1.5, 2.5, 3.5],['1', '2', '3'])
+axs14.tick_params(axis='both', which='both', direction='in', labelsize=20)
+axs14.legend(fontsize=20)
+
 fig444.tight_layout()
 
 fig5.delaxes(axs5[1][2])
@@ -862,26 +1015,20 @@ fig5.delaxes(axs5[1][2])
 fig.savefig(ab.plot_dir + f'CMD_merged_spec_{ab.ver}_psf.png')
 fig2.savefig(ab.plot_dir + f'CMD_allinone_spec_{ab.ver}_psf.png')
 fig3.savefig(ab.plot_dir + f'hist_spec_{ab.ver}_psf_each_app_cut.png')
-fig33.savefig(ab.plot_dir + f'in_red_sequence_completeness.png')
+fig33.savefig(ab.plot_dir + f'in_red_sequence_completeness_hist.png')
+fig33_2.savefig(ab.plot_dir + f'in_red_sequence_completeness_ratio.png')
+fig333.savefig(ab.plot_dir + f'hist_spec_{ab.ver}_no_limit.png')
 fig444.savefig(ab.plot_dir + f'pps_spec_{ab.ver}_all.png')
 fig5.savefig(ab.plot_dir + f'vel_hist_spec_{ab.ver}_psf.png')
 fig6.savefig(ab.plot_dir + f'CMD_each_{ab.ver}_no_err_fit_each_til_001_1sig_rej_psf_proc_app_cut.png')
 fig7.savefig(ab.plot_dir + f'CMD_each_{ab.ver}_no_err_fit_each_til_001_1sig_rej_psf_final_with_spec_app_cut.png')
 fig77.savefig(ab.plot_dir + f'CMD_each_{ab.ver}_psf_final_with_spec.png')
-fig8.savefig(ab.plot_dir + f'A3558_CMD.png')
 fig9.savefig(ab.plot_dir + f'rs.png')
 fig10.savefig(ab.plot_dir + f'frac_in_vs_out.png')
 fig11.savefig(ab.plot_dir + f'clcendist_comp.png')
 fig12.savefig(ab.plot_dir + f'radial_number.png')
+fig13.savefig(ab.plot_dir + f'class_agree.png')
+fig14.savefig(ab.plot_dir + f'hist_agree.png')
 
-plt.close(fig)
-plt.close(fig2)
-plt.close(fig3)
-plt.close(fig5)
-plt.close(fig6)
-plt.close(fig7)
-plt.close(fig77)
-plt.close(fig8)
-plt.close(fig10)
-
+plt.close('all')
 

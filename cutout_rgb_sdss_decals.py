@@ -76,14 +76,14 @@ def find_and_cut(cluster, program, coord, hthumb):
                             fits.open(ab.work_dir + f'fits/{prog[program]}_extracted/{ab.clusters[k]}_usi_{jj}.fits') as hdu_u:
                         g_array, footprint = reproject_interp(hdu_g[0], hdu_r[0].header)
                         u_array, footprint = reproject_interp(hdu_u[0], hdu_r[0].header)
-                        cutout_u = np.rot90(hdu_r[0].data[x1:x2, y1:y2], k=3)
+                        cutout_r = np.rot90(hdu_r[0].data[x1:x2, y1:y2], k=3)
                         cutout_g = np.rot90(g_array[x1:x2, y1:y2], k=3)
-                        cutout_r = np.rot90(u_array[x1:x2, y1:y2], k=3)
+                        cutout_u = np.rot90(u_array[x1:x2, y1:y2], k=3)
                         # print(f'{ht} {x1} {x2} {y1} {y2} {xb} {yb}')
                         return cutout_u, cutout_g, cutout_r, jj, xx, yy   # FITS file [y, x]
     return 0, 0, 0, 0, 0, 0
 
-for k in range(2, 3):   # 2399 and 2670 only which are covered by SDSS and DECaLS
+for k in range(1, 2):   # 2399 and 2670 only which are covered by SDSS and DECaLS
     # save_dir = ab.work_dir + f'pics/{ab.clusters[k]}_new_rs/'
     save_dir = ab.work_dir + f'pics/vs_sdss_decals/'
 
@@ -101,7 +101,7 @@ for k in range(2, 3):   # 2399 and 2670 only which are covered by SDSS and DECaL
         nan_id = []
         # for i in range(0, 1):
         # for i in range(0, len(cat_rs)):
-        i = np.where(cat_rs['NUMBER'] == 402)[0][0]
+        i = np.where(cat_rs['NUMBER'] == 207)[0][0]
 
         c = SkyCoord(f"{cat_rs['ALPHA_J2000'][i]} {cat_rs['DELTA_J2000'][i]}", unit='deg')
         z = ab.redshifts[k]  # redshift
@@ -119,16 +119,16 @@ for k in range(2, 3):   # 2399 and 2670 only which are covered by SDSS and DECaL
                 minval = 0
                 maxval = 1
 
-                img_sqrt_0_3[:,:,0] = img_scale.sqrt(cut_r, scale_min=0, scale_max=0.1)
-                img_sqrt_0_3[:,:,1] = img_scale.sqrt(cut_g, scale_min=0, scale_max=0.1)
-                img_sqrt_0_3[:,:,2] = img_scale.sqrt(cut_u, scale_min=0, scale_max=0.1)
+                img_sqrt_0_3[:,:,0] = img_scale.sqrt(cut_r, scale_min=0, scale_max=1)
+                img_sqrt_0_3[:,:,1] = img_scale.sqrt(cut_g, scale_min=0, scale_max=1)
+                img_sqrt_0_3[:,:,2] = img_scale.sqrt(cut_u, scale_min=0, scale_max=1)
 
                 img_jarret[:,:,0] = mm.jarrett(cut_r, np.nanstd(cut_r), n)
                 img_jarret[:,:,1] = mm.jarrett(cut_g, np.nanstd(cut_g), n)
                 img_jarret[:,:,2] = mm.jarrett(cut_u, np.nanstd(cut_u), n)
 
                 plt.imshow(img_sqrt_0_3, aspect='equal', origin='lower')
-                plt.savefig(save_dir + f'{cat_rs["NUMBER"][i]}_rgb_sqrt_0_01_{prog[j]}.png')
+                plt.savefig(save_dir + f'{cat_rs["NUMBER"][i]}_rgb_sqrt_0_1_{prog[j]}.png')
                 plt.close(fig)
                 plt.imshow(img_jarret, aspect='equal', origin='lower')
                 plt.savefig(save_dir + f'{cat_rs["NUMBER"][i]}_rgb_jar_{n}_{prog[j]}.png')
